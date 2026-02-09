@@ -1,0 +1,30 @@
+.mobile-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.mobile-layout__content {
+  flex: 1;
+  padding-top: 60px; /* Header height */
+  padding-bottom: 70px; /* Footer height */
+  overflow-y: auto;
+}
+
+.mobile-layout__content--no-header {
+  padding-top: 0;
+}
+
+.mobile-layout__content--no-footer {
+  padding-bottom: 0;
+}
+
+/* 移动端容器 */
+@media (min-width: 429px) {
+  .mobile-layout {
+    max-width: 428px;
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+  }
+}

@@ -1,0 +1,583 @@
+package repository
+
+import (
+	"database/sql"
+	"divine-daily-backend/internal/model"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/lib/pq"
+)
+
+// LLMConfigRepository LLM配置数据访问层
+type LLMConfigRepository struct {
+	db *sql.DB
+}
+
+// NewLLMConfigRepository 创建LLM配置Repository
+func NewLLMConfigRepository(db *sql.DB) *LLMConfigRepository {
+	return &LLMConfigRepository{db: db}
+}
+
+// Create 创建LLM配置
+func (r *LLMConfigRepository) Create(config *model.LLMConfig) error {
+	// 设置默认scene
+	if config.Scene == "" {
+		config.Scene = "divination"
+	}
+
+	query := `
+		INSERT INTO llm_configs (
+			name, provider, url_type, api_key, endpoint, model_name,
+			temperature, max_tokens, timeout_seconds, scene,
+			is_default, is_enabled, description
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		RETURNING id, created_at, updated_at
+	`
+
+	err := r.db.QueryRow(
+		query,
+		config.Name, config.Provider, config.URLType, config.APIKey, config.Endpoint,
+		config.ModelName, config.Temperature, config.MaxTokens,
+		config.TimeoutSeconds, config.Scene, config.IsDefault, config.IsEnabled,
+		config.Description,
+	).Scan(&config.ID, &config.CreatedAt, &config.UpdatedAt)
+
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return fmt.Errorf("配置名称已存在: %w", err)
+		}
+		return fmt.Errorf("创建LLM配置失败: %w", err)
+	}
+
+	return nil
+}
+
+// GetByID 根据ID获取配置
+func (r *LLMConfigRepository) GetByID(id int) (*model.LLMConfig, error) {
+	config := &model.LLMConfig{}
+	query := `
+		SELECT id, name, provider, url_type, api_key, endpoint, model_name,
+		       temperature, max_tokens, timeout_seconds, scene,
+		       is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM llm_configs
+		WHERE id = $1
+	`
+
+	err := r.db.QueryRow(query, id).Scan(
+		&config.ID, &config.Name, &config.Provider, &config.URLType, &config.APIKey,
+		&config.Endpoint, &config.ModelName, &config.Temperature,
+		&config.MaxTokens, &config.TimeoutSeconds, &config.Scene,
+		&config.IsDefault, &config.IsEnabled, &config.Description,
+		&config.CreatedAt, &config.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("配置不存在")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询LLM配置失败: %w", err)
+	}
+
+	return config, nil
+}
+
+// GetByName 根据名称获取配置
+func (r *LLMConfigRepository) GetByName(name string) (*model.LLMConfig, error) {
+	config := &model.LLMConfig{}
+	query := `
+		SELECT id, name, provider, url_type, api_key, endpoint, model_name,
+		       temperature, max_tokens, timeout_seconds, scene,
+		       is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM llm_configs
+		WHERE name = $1
+	`
+
+	err := r.db.QueryRow(query, name).Scan(
+		&config.ID, &config.Name, &config.Provider, &config.URLType, &config.APIKey,
+		&config.Endpoint, &config.ModelName, &config.Temperature,
+		&config.MaxTokens, &config.TimeoutSeconds, &config.Scene,
+		&config.IsDefault, &config.IsEnabled, &config.Description,
+		&config.CreatedAt, &config.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("配置不存在")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询LLM配置失败: %w", err)
+	}
+
+	return config, nil
+}
+
+// GetDefault 获取默认配置（兼容旧代码，返回第一个默认配置）
+func (r *LLMConfigRepository) GetDefault() (*model.LLMConfig, error) {
+	return r.GetDefaultByScene("divination")
+}
+
+// GetDefaultByScene 根据场景获取默认配置
+func (r *LLMConfigRepository) GetDefaultByScene(scene string) (*model.LLMConfig, error) {
+	config := &model.LLMConfig{}
+	query := `
+		SELECT id, name, provider, url_type, api_key, endpoint, model_name,
+		       temperature, max_tokens, timeout_seconds, scene,
+		       is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM llm_configs
+		WHERE scene = $1 AND is_default = TRUE AND is_enabled = TRUE
+		LIMIT 1
+	`
+
+	err := r.db.QueryRow(query, scene).Scan(
+		&config.ID, &config.Name, &config.Provider, &config.URLType, &config.APIKey,
+		&config.Endpoint, &config.ModelName, &config.Temperature,
+		&config.MaxTokens, &config.TimeoutSeconds, &config.Scene,
+		&config.IsDefault, &config.IsEnabled, &config.Description,
+		&config.CreatedAt, &config.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("未找到默认配置")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询默认LLM配置失败: %w", err)
+	}
+
+	return config, nil
+}
+
+// ListAll 获取所有配置
+func (r *LLMConfigRepository) ListAll() ([]*model.LLMConfig, error) {
+	query := `
+		SELECT id, name, provider, url_type, api_key, endpoint, model_name,
+		       temperature, max_tokens, timeout_seconds, scene,
+		       is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM llm_configs
+		ORDER BY scene, is_default DESC, created_at DESC
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("查询LLM配置列表失败: %w", err)
+	}
+	defer rows.Close()
+
+	var configs []*model.LLMConfig
+	for rows.Next() {
+		config := &model.LLMConfig{}
+		err := rows.Scan(
+			&config.ID, &config.Name, &config.Provider, &config.URLType, &config.APIKey,
+			&config.Endpoint, &config.ModelName, &config.Temperature,
+			&config.MaxTokens, &config.TimeoutSeconds, &config.Scene,
+			&config.IsDefault, &config.IsEnabled, &config.Description,
+			&config.CreatedAt, &config.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("扫描LLM配置失败: %w", err)
+		}
+		configs = append(configs, config)
+	}
+
+	return configs, nil
+}
+
+// Update 更新配置
+func (r *LLMConfigRepository) Update(config *model.LLMConfig) error {
+	config.UpdatedAt = time.Now()
+	// 设置默认scene
+	if config.Scene == "" {
+		config.Scene = "divination"
+	}
+
+	query := `
+		UPDATE llm_configs
+		SET name = $2, provider = $3, url_type = $4, api_key = $5, endpoint = $6,
+		    model_name = $7, temperature = $8, max_tokens = $9,
+		    timeout_seconds = $10, scene = $11, is_default = $12, is_enabled = $13,
+		    description = $14, updated_at = $15
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(
+		query,
+		config.ID, config.Name, config.Provider, config.URLType, config.APIKey,
+		config.Endpoint, config.ModelName, config.Temperature,
+		config.MaxTokens, config.TimeoutSeconds, config.Scene,
+		config.IsDefault, config.IsEnabled, config.Description, config.UpdatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("更新LLM配置失败: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取更新行数失败: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("配置不存在")
+	}
+
+	return nil
+}
+
+// Delete 删除配置
+func (r *LLMConfigRepository) Delete(id int) error {
+	query := `DELETE FROM llm_configs WHERE id = $1`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("删除LLM配置失败: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取删除行数失败: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("配置不存在")
+	}
+
+	return nil
+}
+
+// SetDefault 设置默认配置
+func (r *LLMConfigRepository) SetDefault(id int) error {
+	// 先取消所有默认配置
+	_, err := r.db.Exec(`UPDATE llm_configs SET is_default = FALSE`)
+	if err != nil {
+		return fmt.Errorf("取消默认配置失败: %w", err)
+	}
+
+	// 设置新的默认配置
+	query := `UPDATE llm_configs SET is_default = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("设置默认配置失败: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取更新行数失败: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("配置不存在")
+	}
+
+	return nil
+}
+
+// PromptConfigRepository Prompt配置数据访问层
+type PromptConfigRepository struct {
+	db *sql.DB
+}
+
+// NewPromptConfigRepository 创建Prompt配置Repository
+func NewPromptConfigRepository(db *sql.DB) *PromptConfigRepository {
+	return &PromptConfigRepository{db: db}
+}
+
+// Create 创建Prompt配置
+func (r *PromptConfigRepository) Create(config *model.PromptConfig) error {
+	// 将Variables序列化为JSONB
+	var variablesJSON []byte
+	if len(config.Variables) > 0 {
+		var err error
+		variablesJSON, err = json.Marshal(config.Variables)
+		if err != nil {
+			return fmt.Errorf("序列化变量失败: %w", err)
+		}
+	}
+
+	query := `
+		INSERT INTO prompt_configs (
+			name, prompt_type, question_type, template,
+			variables, is_default, is_enabled, description
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, created_at, updated_at
+	`
+
+	err := r.db.QueryRow(
+		query,
+		config.Name, config.PromptType, config.QuestionType,
+		config.Template, variablesJSON, config.IsDefault,
+		config.IsEnabled, config.Description,
+	).Scan(&config.ID, &config.CreatedAt, &config.UpdatedAt)
+
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return fmt.Errorf("配置名称已存在: %w", err)
+		}
+		return fmt.Errorf("创建Prompt配置失败: %w", err)
+	}
+
+	return nil
+}
+
+// GetByID 根据ID获取配置
+func (r *PromptConfigRepository) GetByID(id int) (*model.PromptConfig, error) {
+	config := &model.PromptConfig{}
+	var variablesJSON []byte
+
+	query := `
+		SELECT id, name, prompt_type, question_type, template,
+		       variables, is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM prompt_configs
+		WHERE id = $1
+	`
+
+	err := r.db.QueryRow(query, id).Scan(
+		&config.ID, &config.Name, &config.PromptType, &config.QuestionType,
+		&config.Template, &variablesJSON, &config.IsDefault,
+		&config.IsEnabled, &config.Description, &config.CreatedAt,
+		&config.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("配置不存在")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询Prompt配置失败: %w", err)
+	}
+
+	// 反序列化Variables
+	if len(variablesJSON) > 0 {
+		if err := json.Unmarshal(variablesJSON, &config.Variables); err != nil {
+			return nil, fmt.Errorf("反序列化变量失败: %w", err)
+		}
+	}
+
+	return config, nil
+}
+
+// GetByType 根据类型获取配置
+func (r *PromptConfigRepository) GetByType(promptType, questionType string) (*model.PromptConfig, error) {
+	config := &model.PromptConfig{}
+	var variablesJSON []byte
+
+	query := `
+		SELECT id, name, prompt_type, question_type, template,
+		       variables, is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM prompt_configs
+		WHERE prompt_type = $1 AND question_type = $2 AND is_enabled = TRUE
+		ORDER BY is_default DESC
+		LIMIT 1
+	`
+
+	err := r.db.QueryRow(query, promptType, questionType).Scan(
+		&config.ID, &config.Name, &config.PromptType, &config.QuestionType,
+		&config.Template, &variablesJSON, &config.IsDefault,
+		&config.IsEnabled, &config.Description, &config.CreatedAt,
+		&config.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("未找到匹配的配置")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询Prompt配置失败: %w", err)
+	}
+
+	// 反序列化Variables
+	if len(variablesJSON) > 0 {
+		if err := json.Unmarshal(variablesJSON, &config.Variables); err != nil {
+			return nil, fmt.Errorf("反序列化变量失败: %w", err)
+		}
+	}
+
+	return config, nil
+}
+
+// GetDefault 获取默认配置
+func (r *PromptConfigRepository) GetDefault(promptType, questionType string) (*model.PromptConfig, error) {
+	config := &model.PromptConfig{}
+	var variablesJSON []byte
+
+	query := `
+		SELECT id, name, prompt_type, question_type, template,
+		       variables, is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM prompt_configs
+		WHERE prompt_type = $1 AND question_type = $2 
+		  AND is_default = TRUE AND is_enabled = TRUE
+		LIMIT 1
+	`
+
+	err := r.db.QueryRow(query, promptType, questionType).Scan(
+		&config.ID, &config.Name, &config.PromptType, &config.QuestionType,
+		&config.Template, &variablesJSON, &config.IsDefault,
+		&config.IsEnabled, &config.Description, &config.CreatedAt,
+		&config.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("未找到默认配置")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询默认Prompt配置失败: %w", err)
+	}
+
+	// 反序列化Variables
+	if len(variablesJSON) > 0 {
+		if err := json.Unmarshal(variablesJSON, &config.Variables); err != nil {
+			return nil, fmt.Errorf("反序列化变量失败: %w", err)
+		}
+	}
+
+	return config, nil
+}
+
+// ListAll 获取所有配置
+func (r *PromptConfigRepository) ListAll() ([]*model.PromptConfig, error) {
+	query := `
+		SELECT id, name, prompt_type, question_type, template,
+		       variables, is_default, is_enabled, description,
+		       created_at, updated_at
+		FROM prompt_configs
+		ORDER BY prompt_type, question_type, is_default DESC, created_at DESC
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("查询Prompt配置列表失败: %w", err)
+	}
+	defer rows.Close()
+
+	var configs []*model.PromptConfig
+	for rows.Next() {
+		config := &model.PromptConfig{}
+		var variablesJSON []byte
+
+		err := rows.Scan(
+			&config.ID, &config.Name, &config.PromptType, &config.QuestionType,
+			&config.Template, &variablesJSON, &config.IsDefault,
+			&config.IsEnabled, &config.Description, &config.CreatedAt,
+			&config.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("扫描Prompt配置失败: %w", err)
+		}
+
+		// 反序列化Variables
+		if len(variablesJSON) > 0 {
+			if err := json.Unmarshal(variablesJSON, &config.Variables); err != nil {
+				return nil, fmt.Errorf("反序列化变量失败: %w", err)
+			}
+		}
+
+		configs = append(configs, config)
+	}
+
+	return configs, nil
+}
+
+// Update 更新配置
+func (r *PromptConfigRepository) Update(config *model.PromptConfig) error {
+	config.UpdatedAt = time.Now()
+
+	// 将Variables序列化为JSONB
+	var variablesJSON []byte
+	if len(config.Variables) > 0 {
+		var err error
+		variablesJSON, err = json.Marshal(config.Variables)
+		if err != nil {
+			return fmt.Errorf("序列化变量失败: %w", err)
+		}
+	}
+
+	query := `
+		UPDATE prompt_configs
+		SET name = $2, prompt_type = $3, question_type = $4,
+		    template = $5, variables = $6, is_default = $7,
+		    is_enabled = $8, description = $9, updated_at = $10
+		WHERE id = $1
+	`
+
+	result, err := r.db.Exec(
+		query,
+		config.ID, config.Name, config.PromptType, config.QuestionType,
+		config.Template, variablesJSON, config.IsDefault,
+		config.IsEnabled, config.Description, config.UpdatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("更新Prompt配置失败: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取更新行数失败: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("配置不存在")
+	}
+
+	return nil
+}
+
+// Delete 删除配置
+func (r *PromptConfigRepository) Delete(id int) error {
+	query := `DELETE FROM prompt_configs WHERE id = $1`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("删除Prompt配置失败: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取删除行数失败: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("配置不存在")
+	}
+
+	return nil
+}
+
+// SetDefault 设置默认配置
+func (r *PromptConfigRepository) SetDefault(id int) error {
+	// 先获取配置的类型
+	var promptType, questionType string
+	err := r.db.QueryRow(
+		`SELECT prompt_type, question_type FROM prompt_configs WHERE id = $1`,
+		id,
+	).Scan(&promptType, &questionType)
+	if err != nil {
+		return fmt.Errorf("查询配置类型失败: %w", err)
+	}
+
+	// 取消同类型的默认配置
+	_, err = r.db.Exec(
+		`UPDATE prompt_configs SET is_default = FALSE 
+		 WHERE prompt_type = $1 AND question_type = $2`,
+		promptType, questionType,
+	)
+	if err != nil {
+		return fmt.Errorf("取消默认配置失败: %w", err)
+	}
+
+	// 设置新的默认配置
+	query := `UPDATE prompt_configs SET is_default = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("设置默认配置失败: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取更新行数失败: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("配置不存在")
+	}
+
+	return nil
+}

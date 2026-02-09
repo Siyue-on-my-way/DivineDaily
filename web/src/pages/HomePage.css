@@ -1,0 +1,110 @@
+/* 首页样式 */
+
+.home-welcome-card {
+  margin-bottom: var(--spacing-xl);
+}
+
+.home-welcome-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-welcome-text {
+  flex: 1;
+}
+
+.home-welcome-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--primary-green-dark);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.home-welcome-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.home-welcome-stars {
+  font-size: var(--text-3xl);
+  line-height: 1;
+}
+
+/* 区块 */
+.home-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.home-section-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+/* 快速占卜网格 */
+.home-divination-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.home-divination-item {
+  text-align: center;
+  padding: var(--spacing-md) 0;
+}
+
+.home-divination-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.home-divination-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.home-divination-desc {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* 运势网格 */
+.home-fortune-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.home-fortune-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.home-fortune-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+.home-fortune-stars {
+  font-size: var(--text-base);
+  color: var(--primary-green);
+}
+
+/* 最近占卜列表 */
+.home-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}

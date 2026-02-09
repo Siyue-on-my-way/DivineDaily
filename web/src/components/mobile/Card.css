@@ -1,0 +1,124 @@
+/* 移动端卡片组件样式 */
+
+.mobile-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-base);
+}
+
+.mobile-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* 卡片变体 */
+.mobile-card--elevated {
+  box-shadow: var(--shadow-lg);
+}
+
+.mobile-card--flat {
+  box-shadow: none;
+  border: 1px solid var(--border-light);
+}
+
+.mobile-card--gradient {
+  background: var(--gradient-card);
+  border: 1px solid var(--border-medium);
+}
+
+.mobile-card--primary {
+  background: var(--gradient-light);
+  border: 1px solid var(--primary-green-light);
+}
+
+/* 卡片尺寸 */
+.mobile-card--sm {
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+}
+
+.mobile-card--md {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+}
+
+.mobile-card--lg {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-xl);
+}
+
+/* 可点击卡片 */
+.mobile-card--clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-card--clickable:active {
+  transform: scale(0.98);
+}
+
+/* 卡片头部 */
+.mobile-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-card__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.mobile-card__subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* 卡片内容 */
+.mobile-card__content {
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* 卡片底部 */
+.mobile-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+}
+
+/* 卡片图标 */
+.mobile-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--mint-green);
+  color: var(--primary-green);
+  font-size: var(--text-xl);
+}
+
+/* 卡片徽章 */
+.mobile-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  background: var(--mint-green);
+  color: var(--primary-green);
+}

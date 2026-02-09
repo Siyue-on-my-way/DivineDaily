@@ -1,0 +1,29 @@
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Build files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+

@@ -1,0 +1,122 @@
+/* 移动端输入框组件样式 */
+
+.mobile-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+.mobile-input-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.mobile-input-label--required::after {
+  content: ' *';
+  color: var(--error);
+}
+
+.mobile-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  transition: all var(--transition-fast);
+  outline: none;
+  min-height: 44px; /* 触摸友好 */
+}
+
+.mobile-input::placeholder {
+  color: var(--text-light);
+}
+
+.mobile-input:focus {
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.mobile-input:disabled {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 错误状态 */
+.mobile-input--error {
+  border-color: var(--error);
+}
+
+.mobile-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* 成功状态 */
+.mobile-input--success {
+  border-color: var(--success);
+}
+
+/* 文本域 */
+.mobile-textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: var(--font-sans);
+}
+
+/* 输入框图标 */
+.mobile-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.mobile-input--with-icon {
+  padding-left: calc(var(--spacing-md) + 24px + var(--spacing-sm));
+}
+
+.mobile-input__icon {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* 帮助文本 */
+.mobile-input-help {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* 错误文本 */
+.mobile-input-error {
+  font-size: var(--text-xs);
+  color: var(--error);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* 字符计数 */
+.mobile-input-counter {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: var(--spacing-xs);
+}
+
+.mobile-input-counter--limit {
+  color: var(--error);
+}

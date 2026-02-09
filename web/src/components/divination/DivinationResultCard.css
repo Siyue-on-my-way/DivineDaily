@@ -1,0 +1,115 @@
+/* 占卜结果卡片样式 - 清新绿色移动端 */
+
+.result-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.result-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+.result-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* 结果徽章 */
+.result-badge--success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.result-badge--warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.result-badge--info {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+/* 牌面展示 */
+.result-cards {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.result-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  min-width: 80px;
+}
+
+.result-card-icon {
+  font-size: 32px;
+  transition: transform var(--transition-base);
+}
+
+.result-card-icon--reversed {
+  transform: rotate(180deg);
+}
+
+.result-card-position {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+.result-card-name {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  text-align: center;
+}
+
+/* 摘要 */
+.result-summary {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+/* 展开按钮 */
+.result-toggle {
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+}
+
+/* 详细内容 */
+.result-detail {
+  margin-top: var(--spacing-md);
+}
+
+.result-detail-content {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+/* 操作按钮 */
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}

@@ -1,0 +1,38 @@
+/* App 全局样式 */
+
+.app {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* 确保移动端视口 */
+@media (max-width: 428px) {
+  .app {
+    width: 100%;
+  }
+}
+
+/* 桌面端居中显示 */
+@media (min-width: 429px) {
+  .app {
+    display: flex;
+    justify-content: center;
+    background: var(--gradient-soft);
+  }
+}
+
+/* 打字机光标动画 */
+.cursor {
+  animation: blink 1s infinite;
+  color: var(--primary-green);
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,44 @@
+.config-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.config-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  border-bottom: 2px solid var(--border-light);
+  padding-bottom: var(--spacing-xs);
+}
+
+.config-tabs .tab {
+  flex: 1;
+  padding: var(--spacing-sm) 0;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.config-tabs .tab:hover {
+  color: var(--text-primary);
+}
+
+.config-tabs .tab.active {
+  color: var(--primary-green);
+  border-bottom-color: var(--primary-green);
+  font-weight: var(--font-semibold);
+}
+
+.config-content {
+  margin-top: var(--spacing-md);
+}
+
+.loading {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}

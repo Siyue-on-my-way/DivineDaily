@@ -1,0 +1,68 @@
+name: divine-daily
+version: '3.8'
+
+networks:
+  divine-daily-network:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: divine-daily-postgres
+    environment:
+      POSTGRES_USER: divinedaily
+      POSTGRES_PASSWORD: divinedaily123
+      POSTGRES_DB: divinedaily
+    ports:
+      - "45432:5432"
+    volumes:
+      - /data/divine/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U divinedaily"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - divine-daily-network
+
+  backend:
+    image: divine-daily-backend
+    container_name: divine-daily-backend
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+        GOSUMDB: ${GOSUMDB:-sum.golang.org}
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: divinedaily
+      DB_PASSWORD: divinedaily123
+      DB_NAME: divinedaily
+      DB_SSLMODE: disable
+    ports:
+      - "48000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - divine-daily-network
+    restart: unless-stopped
+
+  frontend:
+    image: divine-daily-frontend
+    container_name: divine-daily-frontend
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8080
+    ports:
+      - "40080:40080"
+    depends_on:
+      - backend
+    networks:
+      - divine-daily-network
+    restart: unless-stopped
