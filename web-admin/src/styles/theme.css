@@ -1,0 +1,28 @@
+:root {
+  /* Nebula Mystique Color Palette */
+  --color-deep-void: #0a0a0f;
+  --color-starlight: #e2e8f0;
+  --color-starlight-dim: #94a3b8;
+  --color-ethereal-gold: #fbbf24;
+  --color-ethereal-gold-glow: rgba(251, 191, 36, 0.2);
+  --color-nebula-purple: #6366f1;
+  --color-nebula-purple-glow: rgba(99, 102, 241, 0.2);
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-blur: 12px;
+
+  /* Typography */
+  --font-serif: 'Cinzel', 'Playfair Display', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Animation */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
+  --color-deep-void: #0a0a0f;
+  --color-starlight: #e2e8f0;
+}

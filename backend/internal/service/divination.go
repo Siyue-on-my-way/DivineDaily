@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"log"
 )
 
 type DivinationService struct {
@@ -68,6 +69,8 @@ func (s *DivinationService) SetDailyFortuneService(svc *DailyFortuneService) {
 
 // StartDivination creates a session and triggers the divination process
 func (s *DivinationService) StartDivination(req model.CreateDivinationRequest) (*model.DivinationSession, error) {
+	log.Printf("[占卜流程] 步骤3: Service层开始处理 - 问题: %s, 版本: %s", req.Question, req.Version)
+	
 	session := &model.DivinationSession{
 		ID:              uuid.New().String(),
 		UserID:          req.UserID,
@@ -86,33 +89,44 @@ func (s *DivinationService) StartDivination(req model.CreateDivinationRequest) (
 
 	// Save to in-memory store (降级方案)
 	s.sessions.Store(session.ID, session)
+	log.Printf("[占卜流程] 步骤4: 会话已保存到内存 - SessionID: %s", session.ID)
 
 	// Save to database (优先使用)
 	if s.repo != nil {
 		if err := s.repo.SaveSession(session); err != nil {
-			// 如果数据库保存失败，记录错误但继续使用内存存储
+			log.Printf("[占卜流程] 警告: 数据库保存失败，使用内存存储 - SessionID: %s, Error: %v", session.ID, err)
+		} else {
+			log.Printf("[占卜流程] 步骤5: 会话已保存到数据库 - SessionID: %s", session.ID)
 		}
 	}
 
 	// 根据版本处理
+	log.Printf("[占卜流程] 步骤6: 根据版本选择处理方式 - 版本: %s", req.Version)
+	
 	if req.Version == "TAROT" {
 		// 塔罗牌占卜
+		log.Printf("[占卜流程] 步骤7: 启动塔罗牌占卜异步处理 - SessionID: %s", session.ID)
 		go func() {
 			result, err := s.processTarotQuestion(session.ID, req.Question, req.UserID, req.Spread)
 			s.saveResult(session.ID, result, err)
 		}()
 	} else if req.Version == "CN" {
 		// 国内版：使用智能问题分析
+		log.Printf("[占卜流程] 步骤7: 启动国内版占卜异步处理 - SessionID: %s", session.ID)
 		go func() {
 			var result *model.DivinationResult
 			var err error
 
 			// 1. 使用智能问题分析器分析问题
+			log.Printf("[占卜流程] 步骤8: 开始智能问题分析 - SessionID: %s, 问题: %s", session.ID, req.Question)
 			ctx := context.Background()
 			analysis, analyzeErr := s.questionAnalyzer.AnalyzeQuestion(ctx, req.Question)
 			if analyzeErr != nil {
 				// 如果分析失败，使用降级逻辑
+				log.Printf("[占卜流程] 警告: 智能分析失败，使用降级逻辑 - SessionID: %s, Error: %v", session.ID, analyzeErr)
 				analysis = s.questionAnalyzer.fallbackAnalysis(req.Question)
+			} else {
+				log.Printf("[占卜流程] 步骤9: 问题分析完成 - SessionID: %s, 问题类型: %s, 意图: %s", session.ID, analysis.QuestionType, analysis.Intent)
 			}
 
 			// 2. 将分析结果添加到上下文
@@ -126,9 +140,12 @@ func (s *DivinationService) StartDivination(req model.CreateDivinationRequest) (
 			questionContext["elements"] = analysis.Elements
 
 			// 3. 根据分析结果选择处理策略
+			log.Printf("[占卜流程] 步骤10: 根据问题类型选择处理策略 - SessionID: %s, 类型: %s", session.ID, analysis.QuestionType)
+			
 			switch analysis.QuestionType {
 			case "fortune":
 				// 运势类问题
+				log.Printf("[占卜流程] 步骤11: 处理运势类问题 - SessionID: %s", session.ID)
 				if s.dailyFortuneSvc != nil {
 					result, err = s.processDailyFortune(session.ID, req.UserID)
 				} else {
@@ -136,9 +153,11 @@ func (s *DivinationService) StartDivination(req model.CreateDivinationRequest) (
 				}
 			case "knowledge":
 				// 知识类问题
+				log.Printf("[占卜流程] 步骤11: 处理知识类问题 - SessionID: %s", session.ID)
 				result, err = s.processKnowledgeQuestion(session.ID, req.Question, req.UserID, questionContext, analysis)
 			default:
 				// 决策类、感情类、事业类都使用决策逻辑（周易卦象）
+				log.Printf("[占卜流程] 步骤11: 处理决策类问题（周易卦象） - SessionID: %s", session.ID)
 				result, err = s.processDecisionQuestion(session.ID, req.Question, req.UserID, questionContext)
 			}
 
@@ -146,6 +165,11 @@ func (s *DivinationService) StartDivination(req model.CreateDivinationRequest) (
 			if result != nil && analysis != nil {
 				result.QuestionType = analysis.QuestionType
 				result.QuestionIntent = analysis.Intent
+				log.Printf("[占卜流程] 步骤12: 占卜处理完成 - SessionID: %s, 卦象: %s, 结果: %s", session.ID, result.Title, result.Outcome)
+			}
+			
+			if err != nil {
+				log.Printf("[占卜流程] 错误: 占卜处理失败 - SessionID: %s, Error: %v", session.ID, err)
 			}
 
 			s.saveResult(session.ID, result, err)

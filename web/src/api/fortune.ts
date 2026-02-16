@@ -10,17 +10,15 @@ export interface DailyFortuneParams {
 export const fortuneApi = {
   // 获取每日运势
   getDaily: async (params: DailyFortuneParams): Promise<DailyFortuneInfo> => {
-    const response = await axiosInstance.get<{ data: DailyFortuneInfo }>('/fortune/daily', {
-      params,
-    });
-    return response.data.data;
+    const response = await axiosInstance.post<DailyFortuneInfo>('/daily_fortune', params);
+    return response.data;
   },
 
   // 获取运势历史
   getHistory: async (userId: string, limit: number = 7): Promise<DailyFortuneInfo[]> => {
-    const response = await axiosInstance.get<{ data: DailyFortuneInfo[] }>('/fortune/history', {
+    const response = await axiosInstance.get<DailyFortuneInfo[]>('/fortune/history', {
       params: { user_id: userId, limit },
     });
-    return response.data.data;
+    return response.data;
   },
 };

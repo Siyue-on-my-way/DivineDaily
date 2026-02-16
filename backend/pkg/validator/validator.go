@@ -40,13 +40,10 @@ func ValidateUsername(username string) bool {
 
 // ValidatePassword 验证密码强度
 func ValidatePassword(password string) bool {
-	// 长度检查
+	// 长度检查：至少6位
 	if len(password) < 6 || len(password) > 32 {
 		return false
 	}
-	
-	// 可以添加更多复杂度要求
-	// 例如：必须包含数字、字母、特殊字符等
 	
 	return true
 }
@@ -74,9 +71,13 @@ func ValidateRegisterRequest(username, email, phone, password, confirmPassword s
 		return false, "手机号格式不正确"
 	}
 
-	// 验证密码
-	if !ValidatePassword(password) {
-		return false, "密码长度应为6-32个字符"
+	// 验证密码（至少6位）
+	if len(password) < 6 {
+		return false, "密码长度至少为6位"
+	}
+
+	if len(password) > 32 {
+		return false, "密码长度不能超过32位"
 	}
 
 	// 验证两次密码是否一致
@@ -91,9 +92,6 @@ func ValidateRegisterRequest(username, email, phone, password, confirmPassword s
 func SanitizeInput(input string) string {
 	// 移除前后空格
 	input = strings.TrimSpace(input)
-	
-	// 可以添加更多清理逻辑
-	// 例如：HTML 转义、SQL 注入防护等
 	
 	return input
 }

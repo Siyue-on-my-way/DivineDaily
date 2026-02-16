@@ -1,0 +1,302 @@
+/* ========== 配置列表容器 ========== */
+.config-list {
+  width: 100%;
+}
+
+.config-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.config-list-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* ========== 表格容器 ========== */
+.config-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+/* ========== 表格样式 ========== */
+.config-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.config-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.config-table thead th {
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.config-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.config-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.config-table tbody tr:hover {
+  background: #f9fafb;
+  transform: scale(1.001);
+}
+
+.config-table tbody td {
+  padding: 16px 20px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.config-table tbody td:first-child {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* ========== 徽章样式 ========== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.badge-info {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.badge-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.badge-success {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.badge-warning {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+}
+
+.badge-disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+.badge:not(.badge-disabled) {
+  cursor: default;
+}
+
+.badge:not(.badge-disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== 操作按钮区域 ========== */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.btn-link:hover {
+  background: #ede9fe;
+  color: #5b21b6;
+  transform: translateY(-1px);
+}
+
+.btn-link:active {
+  transform: translateY(0);
+}
+
+.btn-link.btn-test {
+  color: #10b981;
+}
+
+.btn-link.btn-test:hover {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.btn-link.btn-test:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+  background: transparent;
+  transform: none;
+}
+
+.btn-link.btn-danger {
+  color: #ef4444;
+}
+
+.btn-link.btn-danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ========== 空状态 ========== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px !important;
+  color: #9ca3af;
+  font-size: 14px;
+  background: #fafafa;
+}
+
+.empty-state::before {
+  content: "📋";
+  display: block;
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* ========== 按钮样式 ========== */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 1024px) {
+  .config-table {
+    font-size: 13px;
+  }
+  
+  .config-table thead th,
+  .config-table tbody td {
+    padding: 12px 16px;
+  }
+  
+  .action-buttons {
+    gap: 6px;
+  }
+  
+  .btn-link {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .config-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .config-table-container {
+    overflow-x: auto;
+  }
+  
+  .config-table {
+    min-width: 800px;
+  }
+}
+
+/* ========== 加载状态 ========== */
+.loading-row {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: #9ca3af;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== 测试中状态 ========== */
+.btn-link.testing {
+  position: relative;
+  color: #d1d5db;
+  pointer-events: none;
+}
+
+.btn-link.testing::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}

@@ -58,9 +58,14 @@ export interface PromptConfig {
   id: number;
   name: string;
   prompt_type: string; // answer/detail/recommendation
-  question_type: string; // decision/recommendation
+  question_type: string; // decision/recommendation/fortune/knowledge
   template: string;
   variables?: PromptVariable[];
+  llm_config_id?: number; // 关联的LLM配置ID
+  temperature?: number;
+  max_tokens?: number;
+  timeout_seconds?: number;
+  scene?: string; // divination/tarot/daily_fortune/preprocessing
   is_default: boolean;
   is_enabled: boolean;
   description?: string;
@@ -74,6 +79,11 @@ export interface PromptConfigCreateRequest {
   question_type: string;
   template: string;
   variables?: PromptVariable[];
+  llm_config_id?: number;
+  temperature?: number;
+  max_tokens?: number;
+  timeout_seconds?: number;
+  scene?: string;
   is_enabled?: boolean;
   description?: string;
 }
@@ -84,6 +94,11 @@ export interface PromptConfigUpdateRequest {
   question_type?: string;
   template?: string;
   variables?: PromptVariable[];
+  llm_config_id?: number;
+  temperature?: number;
+  max_tokens?: number;
+  timeout_seconds?: number;
+  scene?: string;
   is_enabled?: boolean;
   description?: string;
 }
@@ -102,4 +117,3 @@ export interface ApiResponse<T> {
   error?: string;
   detail?: string;
 }
-

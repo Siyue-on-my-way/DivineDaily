@@ -190,7 +190,26 @@ func (h *ConfigHandler) TestLLMConfig(c *gin.Context) {
 		return
 	}
 
-	response, err := h.configSvc.TestLLMConfig(id)
+	// 获取测试模式：stream（流式）或 block（阻塞式）
+	var req struct {
+		Mode string `json:"mode"` // "stream" or "block"
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req.Mode = "block" // 默认阻塞式
+	}
+
+	if req.Mode == "stream" {
+		// 流式输出测试
+		h.testLLMConfigStream(c, id)
+	} else {
+		// 阻塞式输出测试
+		h.testLLMConfigBlock(c, id)
+	}
+}
+
+// testLLMConfigBlock 阻塞式测试
+func (h *ConfigHandler) testLLMConfigBlock(c *gin.Context, id int) {
+	response, tokenCount, duration, err := h.configSvc.TestLLMConfigBlock(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":  "测试失败",
@@ -201,8 +220,73 @@ func (h *ConfigHandler) TestLLMConfig(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "测试成功",
-		"data":    response,
+		"data": gin.H{
+			"response":    response,
+			"token_count": tokenCount,
+			"duration_ms": duration,
+			"mode":        "block",
+		},
 	})
+}
+
+// testLLMConfigStream 流式测试
+func (h *ConfigHandler) testLLMConfigStream(c *gin.Context, id int) {
+	// 设置SSE响应头
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	// 创建流式通道
+	streamChan := make(chan string, 100)
+	errChan := make(chan error, 1)
+
+	// 启动流式测试
+	go func() {
+		err := h.configSvc.TestLLMConfigStream(id, streamChan)
+		if err != nil {
+			errChan <- err
+		}
+		close(streamChan)
+		close(errChan)
+	}()
+
+	// 发送流式数据
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "不支持流式输出",
+		})
+		return
+	}
+
+	tokenCount := 0
+	for {
+		select {
+		case chunk, ok := <-streamChan:
+			if !ok {
+				// 流结束
+				c.SSEvent("done", gin.H{
+					"token_count": tokenCount,
+					"mode":        "stream",
+				})
+				flusher.Flush()
+				return
+			}
+			// 发送数据块
+			c.SSEvent("message", chunk)
+			flusher.Flush()
+			tokenCount++
+		case err := <-errChan:
+			if err != nil {
+				c.SSEvent("error", gin.H{
+					"error": err.Error(),
+				})
+				flusher.Flush()
+				return
+			}
+		}
+	}
 }
 
 // ========== Prompt配置API ==========
@@ -236,13 +320,6 @@ func (h *ConfigHandler) GetPromptConfig(c *gin.Context) {
 	}
 
 	config, err := h.configSvc.GetPromptConfigByID(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":  "配置不存在",
-			"detail": err.Error(),
-		})
-		return
-	}
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":  "配置不存在",

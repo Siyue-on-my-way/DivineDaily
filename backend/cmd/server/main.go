@@ -38,6 +38,11 @@ func main() {
 			log.Printf("Warning: Failed to migrate user tables: %v", err)
 		} else {
 			log.Println("User tables migrated successfully")
+		
+		// 初始化管理员用户
+		if err := database.InitAdminUser(); err != nil {
+			log.Printf("Warning: Failed to initialize admin user: %v", err)
+		}
 		}
 	}
 
@@ -185,8 +190,12 @@ func main() {
 			preprocess.POST("/question", preprocessingHandler.PreprocessQuestion)
 		}
 
-		// 配置管理接口
+		// 配置管理接口（需要管理员权限）
 		configs := v1.Group("/configs")
+		if jwtManager != nil {
+			configs.Use(middleware.AuthMiddleware(jwtManager))
+			configs.Use(middleware.AdminMiddleware())
+		}
 		{
 			// LLM配置
 			llm := configs.Group("/llm")

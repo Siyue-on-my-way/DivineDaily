@@ -1,0 +1,243 @@
+.home-hero {
+  position: relative;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border-radius: 20px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.home-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.home-hero__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.home-hero__greeting {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  opacity: 0.9;
+}
+
+.home-hero__score {
+  font-size: 72px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  line-height: 1;
+  margin: 8px 0;
+}
+
+.home-hero__score-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.home-hero__action {
+  margin-top: 8px;
+}
+
+/* 快速入口 */
+.home-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.home-quick-action {
+  position: relative;
+  padding: 32px 20px;
+  background: white;
+  border-radius: 16px;
+  border: 2px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.home-quick-action::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.home-quick-action:hover::before {
+  opacity: 1;
+}
+
+.home-quick-action:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-green);
+}
+
+.home-quick-action:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.home-quick-action__icon {
+  font-size: 48px;
+  filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.3));
+}
+
+.home-quick-action__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.home-quick-action__desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* 可折叠区域 */
+.home-collapsible {
+  margin-bottom: 24px;
+}
+
+.home-collapsible__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+}
+
+.home-collapsible__header:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-green);
+}
+
+.home-collapsible__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-collapsible__icon {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.home-collapsible__icon--expanded {
+  transform: rotate(180deg);
+}
+
+.home-collapsible__content {
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* 运势网格 */
+.home-fortune-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+}
+
+.home-fortune-item-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+}
+
+.home-fortune-item-compact__icon {
+  font-size: 24px;
+}
+
+.home-fortune-item-compact__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.home-fortune-item-compact__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .home-hero__score {
+    font-size: 64px;
+  }
+
+  .home-quick-actions {
+    gap: 12px;
+  }
+
+  .home-quick-action {
+    min-height: 120px;
+    padding: 24px 16px;
+  }
+
+  .home-quick-action__icon {
+    font-size: 40px;
+  }
+
+  .home-quick-action__title {
+    font-size: 16px;
+  }
+}

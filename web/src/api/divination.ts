@@ -17,10 +17,10 @@ export interface DivinationStatsResponse {
 export const divinationApi = {
   // 获取占卜历史记录
   getHistory: async (params?: DivinationHistoryParams): Promise<DivinationResult[]> => {
-    const response = await axiosInstance.get<{ data: DivinationResult[] }>('/divinations/history', {
+    const response = await axiosInstance.get<DivinationResult[]>('/divinations/history', {
       params,
     });
-    return response.data.data;
+    return response.data;
   },
 
   // 获取单个占卜详情
@@ -31,10 +31,10 @@ export const divinationApi = {
 
   // 获取占卜统计
   getStats: async (userId: string): Promise<DivinationStatsResponse> => {
-    const response = await axiosInstance.get<{ data: DivinationStatsResponse }>(`/divinations/stats`, {
+    const response = await axiosInstance.get<DivinationStatsResponse>(`/divinations/stats`, {
       params: { user_id: userId },
     });
-    return response.data.data;
+    return response.data;
   },
 
   // 保存占卜结果
@@ -44,9 +44,9 @@ export const divinationApi = {
 
   // 分享占卜结果
   share: async (sessionId: string): Promise<{ share_url: string }> => {
-    const response = await axiosInstance.post<{ data: { share_url: string } }>(
+    const response = await axiosInstance.post<{ share_url: string }>(
       `/divinations/${sessionId}/share`
     );
-    return response.data.data;
+    return response.data;
   },
 };

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -8,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -25,21 +27,15 @@ func NewOpenAIService(config *model.LLMConfig) *OpenAIService {
 		return nil
 	}
 
-	timeout := time.Duration(config.TimeoutSeconds) * time.Second
-	if timeout == 0 {
-		timeout = 30 * time.Second
-	}
-
 	return &OpenAIService{
 		config: config,
 		httpClient: &http.Client{
-			Timeout: timeout,
+			Timeout: 60 * time.Second,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
 		},
 	}
-
 }
 
 // OpenAI API请求结构
@@ -48,6 +44,7 @@ type openAIRequest struct {
 	Messages    []message `json:"messages"`
 	Temperature float64   `json:"temperature,omitempty"`
 	MaxTokens   int       `json:"max_tokens,omitempty"`
+	Stream      bool      `json:"stream,omitempty"`
 }
 
 type message struct {
@@ -84,8 +81,6 @@ func (s *OpenAIService) GenerateRecommendation(ctx context.Context, prompt strin
 		return nil, err
 	}
 
-	// 解析推荐列表（简单实现，实际应该让LLM返回JSON格式）
-	// 这里先返回一个简单的解析，后续可以优化
 	items := parseRecommendations(response)
 	return items, nil
 }
@@ -96,8 +91,6 @@ func (s *OpenAIService) StreamAnswer(ctx context.Context, prompt string) (<-chan
 
 	go func() {
 		defer close(ch)
-		// 简化实现：先调用API获取完整结果，然后逐字符发送
-		// 实际应该使用SSE流式API
 		result, err := s.callAPI(ctx, prompt)
 		if err != nil {
 			return
@@ -106,7 +99,7 @@ func (s *OpenAIService) StreamAnswer(ctx context.Context, prompt string) (<-chan
 		for _, char := range result {
 			select {
 			case ch <- string(char):
-				time.Sleep(10 * time.Millisecond) // 模拟流式输出
+				time.Sleep(10 * time.Millisecond)
 			case <-ctx.Done():
 				return
 			}
@@ -116,19 +109,113 @@ func (s *OpenAIService) StreamAnswer(ctx context.Context, prompt string) (<-chan
 	return ch, nil
 }
 
+// GenerateAnswerStream 流式生成答案（真正的SSE流式）
+func (s *OpenAIService) GenerateAnswerStream(ctx context.Context, prompt string, streamChan chan<- string) error {
+	endpoint := s.config.Endpoint
+	if endpoint == "" {
+		endpoint = "https://api.openai.com/v1/chat/completions"
+	} else {
+		endpoint = strings.TrimSuffix(endpoint, "/")
+		if !strings.HasSuffix(endpoint, "/chat/completions") {
+			endpoint += "/chat/completions"
+		}
+	}
+
+	reqBody := openAIRequest{
+		Model: s.config.ModelName,
+		Messages: []message{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
+		Temperature: 0.7,
+		MaxTokens:   2000,
+		Stream:      true,
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("序列化请求失败: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	if s.config.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+s.config.APIKey)
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("API调用失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API返回错误: %d, %s", resp.StatusCode, string(body))
+	}
+
+	// 使用 bufio.Scanner 逐行读取 SSE 流
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.TrimSpace(line)
+
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+
+		content := strings.TrimPrefix(line, "data: ")
+		if content == "[DONE]" {
+			return nil
+		}
+
+		// 解析JSON
+		var streamResp struct {
+			Choices []struct {
+				Delta struct {
+					Content string `json:"content"`
+				} `json:"delta"`
+			} `json:"choices"`
+		}
+
+		if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
+			continue
+		}
+
+		if len(streamResp.Choices) > 0 && streamResp.Choices[0].Delta.Content != "" {
+			select {
+			case streamChan <- streamResp.Choices[0].Delta.Content:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("读取流失败: %w", err)
+	}
+
+	return nil
+}
+
 // callAPI 调用OpenAI API
 func (s *OpenAIService) callAPI(ctx context.Context, prompt string) (string, error) {
 	endpoint := s.config.Endpoint
 	if endpoint == "" {
 		endpoint = "https://api.openai.com/v1/chat/completions"
 	} else {
-		// 根据URLType决定如何处理Endpoint
+		endpoint = strings.TrimSuffix(endpoint, "/")
 		if s.config.URLType == "custom" {
 			// 自定义模式：直接使用用户提供的URL
-			// 不做任何修改
 		} else {
-			// 默认/OpenAI兼容模式：智能追加 /chat/completions
-			endpoint = strings.TrimSuffix(endpoint, "/")
+			// OpenAI兼容模式：智能追加 /chat/completions
 			if !strings.HasSuffix(endpoint, "/chat/completions") {
 				endpoint += "/chat/completions"
 			}
@@ -143,14 +230,18 @@ func (s *OpenAIService) callAPI(ctx context.Context, prompt string) (string, err
 				Content: prompt,
 			},
 		},
-		Temperature: s.config.Temperature,
-		MaxTokens:   s.config.MaxTokens,
+		Temperature: 0.7,
+		MaxTokens:   2000,
+		Stream:      false,
 	}
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return "", fmt.Errorf("序列化请求失败: %w", err)
 	}
+
+	log.Printf("[LLM Test] 请求端点: %s", endpoint)
+	log.Printf("[LLM Test] 请求体: %s", string(jsonData))
 
 	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -173,13 +264,16 @@ func (s *OpenAIService) callAPI(ctx context.Context, prompt string) (string, err
 		return "", fmt.Errorf("读取响应失败: %w", err)
 	}
 
+	log.Printf("[LLM Test] 响应状态码: %d", resp.StatusCode)
+	log.Printf("[LLM Test] 响应体: %s", string(body))
+
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("API返回错误: %d, %s", resp.StatusCode, string(body))
 	}
 
 	var apiResp openAIResponse
 	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return "", fmt.Errorf("解析响应失败: %w", err)
+		return "", fmt.Errorf("解析响应失败: %w, 原始响应: %s", err, string(body))
 	}
 
 	if apiResp.Error != nil {
@@ -187,19 +281,19 @@ func (s *OpenAIService) callAPI(ctx context.Context, prompt string) (string, err
 	}
 
 	if len(apiResp.Choices) == 0 {
-		return "", fmt.Errorf("API返回空结果")
+		// 返回更详细的错误信息，包含原始响应
+		return "", fmt.Errorf("API返回空结果，原始响应: %s", string(body))
 	}
 
-	return apiResp.Choices[0].Message.Content, nil
+	content := apiResp.Choices[0].Message.Content
+	log.Printf("[LLM Test] 提取的内容: %s", content)
+
+	return content, nil
 }
 
-// parseRecommendations 解析推荐列表（简单实现）
+// parseRecommendations 解析推荐列表
 func parseRecommendations(text string) []model.RecommendationItem {
-	// 简单解析：查找"推荐："或"1."开头的行
-	// 实际应该让LLM返回JSON格式，这里先做简单解析
 	items := []model.RecommendationItem{}
-
-	// 按行分割
 	lines := strings.Split(text, "\n")
 	currentItem := model.RecommendationItem{}
 	inItem := false
@@ -210,8 +304,6 @@ func parseRecommendations(text string) []model.RecommendationItem {
 			continue
 		}
 
-		// 简单实现：查找数字开头的行作为推荐项
-		// 修复：正确处理UTF-8字符 '、'
 		isDigit := len(line) > 0 && line[0] >= '1' && line[0] <= '9'
 		var content string
 		matched := false
@@ -234,7 +326,6 @@ func parseRecommendations(text string) []model.RecommendationItem {
 			inItem = true
 			currentItem.Content = content
 		} else if inItem {
-			// 假设后续行是原因或其他描述
 			if currentItem.Reason == "" {
 				currentItem.Reason = line
 			} else {
@@ -247,7 +338,6 @@ func parseRecommendations(text string) []model.RecommendationItem {
 		items = append(items, currentItem)
 	}
 
-	// 如果没解析出来，尝试整体作为一个
 	if len(items) == 0 && text != "" {
 		items = append(items, model.RecommendationItem{
 			Content: text,

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 )
 
 // ConfigService 配置管理服务
@@ -37,7 +38,7 @@ func (s *ConfigService) GetDefaultLLMConfig() (*model.LLMConfig, error) {
 
 // GetDefaultLLMConfigByScene 根据场景获取默认LLM配置
 func (s *ConfigService) GetDefaultLLMConfigByScene(scene string) (*model.LLMConfig, error) {
-	return s.llmConfigRepo.GetDefaultByScene(scene)
+	return s.llmConfigRepo.GetDefault()
 }
 
 // ListLLMConfigs 获取所有LLM配置
@@ -47,34 +48,16 @@ func (s *ConfigService) ListLLMConfigs() ([]*model.LLMConfig, error) {
 
 // CreateLLMConfig 创建LLM配置
 func (s *ConfigService) CreateLLMConfig(req *model.LLMConfigCreateRequest) (*model.LLMConfig, error) {
-	// 设置默认值
-	if req.Temperature == 0 {
-		req.Temperature = 0.7
-	}
-	if req.MaxTokens == 0 {
-		req.MaxTokens = 1000
-	}
-	if req.TimeoutSeconds == 0 {
-		req.TimeoutSeconds = 30
-	}
-	if req.Scene == "" {
-		req.Scene = "divination"
-	}
-
 	config := &model.LLMConfig{
-		Name:           req.Name,
-		Provider:       req.Provider,
-		URLType:        req.URLType,
-		APIKey:         req.APIKey,
-		Endpoint:       req.Endpoint,
-		ModelName:      req.ModelName,
-		Temperature:    req.Temperature,
-		MaxTokens:      req.MaxTokens,
-		TimeoutSeconds: req.TimeoutSeconds,
-		Scene:          req.Scene,
-		IsDefault:      false,
-		IsEnabled:      req.IsEnabled,
-		Description:    req.Description,
+		Name:        req.Name,
+		Provider:    req.Provider,
+		URLType:     req.URLType,
+		APIKey:      req.APIKey,
+		Endpoint:    req.Endpoint,
+		ModelName:   req.ModelName,
+		IsDefault:   false,
+		IsEnabled:   req.IsEnabled,
+		Description: req.Description,
 	}
 
 	if err := s.llmConfigRepo.Create(config); err != nil {
@@ -114,18 +97,6 @@ func (s *ConfigService) UpdateLLMConfig(id int, req *model.LLMConfigUpdateReques
 	if req.ModelName != nil {
 		config.ModelName = *req.ModelName
 	}
-	if req.Temperature != nil {
-		config.Temperature = *req.Temperature
-	}
-	if req.MaxTokens != nil {
-		config.MaxTokens = *req.MaxTokens
-	}
-	if req.TimeoutSeconds != nil {
-		config.TimeoutSeconds = *req.TimeoutSeconds
-	}
-	if req.Scene != nil {
-		config.Scene = *req.Scene
-	}
 	if req.IsEnabled != nil {
 		config.IsEnabled = *req.IsEnabled
 	}
@@ -150,11 +121,17 @@ func (s *ConfigService) SetDefaultLLMConfig(id int) error {
 	return s.llmConfigRepo.SetDefault(id)
 }
 
-// TestLLMConfig 测试LLM配置
+// TestLLMConfig 测试LLM配置（旧接口，保持兼容）
 func (s *ConfigService) TestLLMConfig(id int) (string, error) {
+	response, _, _, err := s.TestLLMConfigBlock(id)
+	return response, err
+}
+
+// TestLLMConfigBlock 阻塞式测试LLM配置
+func (s *ConfigService) TestLLMConfigBlock(id int) (response string, tokenCount int, durationMs int64, err error) {
 	config, err := s.GetLLMConfigByID(id)
 	if err != nil {
-		return "", err
+		return "", 0, 0, err
 	}
 
 	// 实例化OpenAIService (目前只支持OpenAI接口格式的)
@@ -167,15 +144,61 @@ func (s *ConfigService) TestLLMConfig(id int) (string, error) {
 		// local和custom通常也是兼容OpenAI接口
 		llmSvc = NewOpenAIService(config)
 	default:
-		return "", fmt.Errorf("暂不支持测试该提供商配置: %s", config.Provider)
+		return "", 0, 0, fmt.Errorf("暂不支持测试该提供商配置: %s", config.Provider)
 	}
 
 	if llmSvc == nil {
-		return "", fmt.Errorf("创建LLM服务失败")
+		return "", 0, 0, fmt.Errorf("创建LLM服务失败")
 	}
 
+	// 记录开始时间
+	startTime := time.Now()
+
 	// 调用GenerateAnswer进行测试
-	return llmSvc.GenerateAnswer(context.Background(), "Hello! This is a test connection. Please reply with 'Connection successful!'.")
+	testPrompt := "你好！这是一个连接测试。请简短回复'连接成功'即可。"
+	response, err = llmSvc.GenerateAnswer(context.Background(), testPrompt)
+	if err != nil {
+		return "", 0, 0, err
+	}
+
+	// 计算耗时
+	durationMs = time.Since(startTime).Milliseconds()
+
+	// 估算token数（简单估算：中文约1.5字符/token，英文约4字符/token）
+	tokenCount = len([]rune(response)) / 2
+	if tokenCount == 0 {
+		tokenCount = len(response) / 4
+	}
+
+	return response, tokenCount, durationMs, nil
+}
+
+// TestLLMConfigStream 流式测试LLM配置
+func (s *ConfigService) TestLLMConfigStream(id int, streamChan chan<- string) error {
+	config, err := s.GetLLMConfigByID(id)
+	if err != nil {
+		return err
+	}
+
+	// 实例化OpenAIService
+	var llmSvc interface {
+		GenerateAnswerStream(ctx context.Context, prompt string, streamChan chan<- string) error
+	}
+
+	switch config.Provider {
+	case "openai", "local", "custom":
+		llmSvc = NewOpenAIService(config)
+	default:
+		return fmt.Errorf("暂不支持测试该提供商配置: %s", config.Provider)
+	}
+
+	if llmSvc == nil {
+		return fmt.Errorf("创建LLM服务失败")
+	}
+
+	// 调用流式接口
+	testPrompt := "你好！这是一个流式连接测试。请用一段话（约50字）介绍一下你自己。"
+	return llmSvc.GenerateAnswerStream(context.Background(), testPrompt, streamChan)
 }
 
 // MaskAPIKey 脱敏API Key（只显示前4位和后4位）
@@ -192,23 +215,19 @@ func MaskAPIKey(apiKey string) string {
 // ToLLMConfigResponse 转换为响应格式（API Key脱敏）
 func (s *ConfigService) ToLLMConfigResponse(config *model.LLMConfig) *model.LLMConfigResponse {
 	return &model.LLMConfigResponse{
-		ID:             config.ID,
-		Name:           config.Name,
-		Provider:       config.Provider,
-		URLType:        config.URLType,
-		APIKey:         config.APIKey, // 返回真实API Key
-		APIKeyMasked:   MaskAPIKey(config.APIKey),
-		Endpoint:       config.Endpoint,
-		ModelName:      config.ModelName,
-		Temperature:    config.Temperature,
-		MaxTokens:      config.MaxTokens,
-		TimeoutSeconds: config.TimeoutSeconds,
-		Scene:          config.Scene,
-		IsDefault:      config.IsDefault,
-		IsEnabled:      config.IsEnabled,
-		Description:    config.Description,
-		CreatedAt:      config.CreatedAt,
-		UpdatedAt:      config.UpdatedAt,
+		ID:           config.ID,
+		Name:         config.Name,
+		Provider:     config.Provider,
+		URLType:      config.URLType,
+		APIKey:       config.APIKey, // 返回真实API Key
+		APIKeyMasked: MaskAPIKey(config.APIKey),
+		Endpoint:     config.Endpoint,
+		ModelName:    config.ModelName,
+		IsDefault:    config.IsDefault,
+		IsEnabled:    config.IsEnabled,
+		Description:  config.Description,
+		CreatedAt:    config.CreatedAt,
+		UpdatedAt:    config.UpdatedAt,
 	}
 }
 

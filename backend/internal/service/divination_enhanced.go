@@ -4,6 +4,7 @@ import (
 	"context"
 	"divine-daily-backend/internal/model"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -14,16 +15,24 @@ func (s *DivinationService) processDecisionQuestion(
 	userID string,
 	questionContext map[string]interface{},
 ) (*model.DivinationResult, error) {
+	log.Printf("[占卜流程-决策] 步骤A: 开始处理决策问题 - SessionID: %s, 问题: %s", sessionID, question)
+	
 	// 1. 获取用户档案（生辰八字）
+	log.Printf("[占卜流程-决策] 步骤B: 获取用户档案 - SessionID: %s, UserID: %s", sessionID, userID)
 	profile, err := s.userProfileSvc.GetProfile(userID)
 	if err != nil {
 		// 如果用户没有档案，使用默认值
+		log.Printf("[占卜流程-决策] 警告: 用户档案不存在，使用默认值 - SessionID: %s", sessionID)
 		profile = &model.UserProfile{UserID: userID}
+	} else {
+		log.Printf("[占卜流程-决策] 步骤C: 用户档案获取成功 - SessionID: %s", sessionID)
 	}
 
 	// 2. 生成卦象
+	log.Printf("[占卜流程-决策] 步骤D: 开始生成卦象 - SessionID: %s", sessionID)
 	sixLines := generateSixLines(sessionID)
 	hexagram := getHexagramInfo(sixLines.HexagramNumber, sixLines)
+	log.Printf("[占卜流程-决策] 步骤E: 卦象生成完成 - SessionID: %s, 卦象: %s (第%d卦), 结果: %s", sessionID, hexagram.Name, hexagram.Number, hexagram.Outcome)
 
 	// 3. 从上下文中获取问题分析结果
 	var analysis *QuestionAnalysis
@@ -34,22 +43,35 @@ func (s *DivinationService) processDecisionQuestion(
 	}
 
 	// 4. 构建智能 Prompt（根据问题分析结果）
+	log.Printf("[占卜流程-决策] 步骤F: 构建智能Prompt - SessionID: %s", sessionID)
 	answerPrompt := buildSmartAnswerPrompt(question, profile, hexagram, analysis, questionContext)
+	log.Printf("[占卜流程-决策] Prompt内容（答案）: %s", answerPrompt)
 
 	// 5. 调用LLM生成直接答案（结果卡）
+	log.Printf("[占卜流程-决策] 步骤G: 调用LLM生成答案 - SessionID: %s", sessionID)
 	ctx := context.Background()
 	answer, err := s.llmService.GenerateAnswer(ctx, answerPrompt)
 	if err != nil {
 		// 如果LLM调用失败，使用默认答案
+		log.Printf("[占卜流程-决策] 警告: LLM答案生成失败，使用默认答案 - SessionID: %s, Error: %v", sessionID, err)
 		answer = fmt.Sprintf("根据本次卦象分析，建议您谨慎考虑。卦象显示：%s。", hexagram.Summary)
+	} else {
+		log.Printf("[占卜流程-决策] 步骤H: LLM答案生成成功 - SessionID: %s, 答案长度: %d", sessionID, len(answer))
+		log.Printf("[占卜流程-决策] LLM答案内容: %s", answer)
 	}
 
 	// 6. 构建详情 Prompt
+	log.Printf("[占卜流程-决策] 步骤I: 构建详情Prompt - SessionID: %s", sessionID)
 	detailPrompt := buildSmartDetailPrompt(question, profile, hexagram, analysis, questionContext)
+	log.Printf("[占卜流程-决策] Prompt内容（详情）: %s", detailPrompt)
+	log.Printf("[占卜流程-决策] 步骤J: 调用LLM生成详情 - SessionID: %s", sessionID)
 	detail, err := s.llmService.GenerateDetail(ctx, detailPrompt)
 	if err != nil {
 		// 如果LLM调用失败，使用卦象详情
+		log.Printf("[占卜流程-决策] 警告: LLM详情生成失败，使用默认详情 - SessionID: %s, Error: %v", sessionID, err)
 		detail = hexagram.Detail
+	} else {
+		log.Printf("[占卜流程-决策] 步骤K: LLM详情生成成功 - SessionID: %s, 详情长度: %d", sessionID, len(detail))
 	}
 
 	// 7. 构建卦象信息（详情中使用）
@@ -65,7 +87,8 @@ func (s *DivinationService) processDecisionQuestion(
 	}
 
 	// 8. 构建结果
-	return &model.DivinationResult{
+	log.Printf("[占卜流程-决策] 步骤L: 构建最终结果 - SessionID: %s", sessionID)
+	result := &model.DivinationResult{
 		SessionID:    sessionID,
 		Outcome:      hexagram.Outcome,
 		Title:        hexagram.Name,
@@ -73,7 +96,10 @@ func (s *DivinationService) processDecisionQuestion(
 		Detail:       detail,       // 详情：算卦过程和完整解读
 		HexagramInfo: hexagramInfo, // 卦象信息（详情中显示）
 		CreatedAt:    time.Now(),
-	}, nil
+	}
+	
+	log.Printf("[占卜流程-决策] 步骤M: 决策问题处理完成 - SessionID: %s, 卦象: %s, 结果: %s", sessionID, result.Title, result.Outcome)
+	return result, nil
 }
 
 // processRecommendationQuestion 处理日常推荐类问题

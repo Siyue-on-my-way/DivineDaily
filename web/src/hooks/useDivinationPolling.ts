@@ -56,8 +56,9 @@ export const useDivinationPolling = ({
       // 创建新的 AbortController
       abortControllerRef.current = new AbortController();
 
+      // 修复：去掉 /result 后缀，匹配后端 API 路径
       const response = await axiosInstance.get<DivinationResult>(
-        `/divinations/${sessionId}/result`,
+        `/divinations/${sessionId}`,
         { signal: abortControllerRef.current.signal }
       );
 

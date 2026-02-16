@@ -18,6 +18,7 @@ var (
 type Claims struct {
 	UserID   int64  `json:"user_id"`
 	Username string `json:"username"`
+	Role     string `json:"role"` // admin, normal
 	jwt.RegisteredClaims
 }
 
@@ -38,13 +39,14 @@ func NewJWTManager(secretKey string, expireHours, refreshExpire int) *JWTManager
 }
 
 // GenerateToken 生成 JWT Token
-func (m *JWTManager) GenerateToken(userID int64, username string) (string, error) {
+func (m *JWTManager) GenerateToken(userID int64, username, role string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(m.expireHours) * time.Hour)
 
 	claims := &Claims{
 		UserID:   userID,
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -62,13 +64,14 @@ func (m *JWTManager) GenerateToken(userID int64, username string) (string, error
 }
 
 // GenerateRefreshToken 生成刷新 Token
-func (m *JWTManager) GenerateRefreshToken(userID int64, username string) (string, error) {
+func (m *JWTManager) GenerateRefreshToken(userID int64, username, role string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(m.refreshExpire) * time.Hour)
 
 	claims := &Claims{
 		UserID:   userID,
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -113,7 +116,7 @@ func (m *JWTManager) RefreshToken(tokenString string) (string, error) {
 	}
 
 	// 即使 Token 过期，也允许刷新（在一定时间窗口内）
-	return m.GenerateToken(claims.UserID, claims.Username)
+	return m.GenerateToken(claims.UserID, claims.Username, claims.Role)
 }
 
 // ValidateToken 验证 Token 是否有效

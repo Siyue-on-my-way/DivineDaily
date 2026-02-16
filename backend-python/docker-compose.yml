@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend-python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=divinedaily
+      - DB_PASSWORD=divinedaily123
+      - DB_NAME=divinedaily
+      - JWT_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      - postgres
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 3 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting with hot reload...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+      "
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=divinedaily
+      - POSTGRES_PASSWORD=divinedaily123
+      - POSTGRES_DB=divinedaily
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U divinedaily"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

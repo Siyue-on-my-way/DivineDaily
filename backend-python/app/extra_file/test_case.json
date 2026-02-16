@@ -1,0 +1,58 @@
+{
+  "易经-详情": {
+    "scene": "divination",
+    "prompt_type": "detail",
+    "question_type": "decision",
+    "test_input": {
+      "question": "我应该换工作吗？",
+      "hexagram_name": "乾卦",
+      "hexagram_number": 1,
+      "hexagram_summary": "元亨利贞",
+      "hexagram_detail": "乾卦象征天，代表刚健、进取、自强不息。初九爻动，潜龙勿用；九四爻动，或跃在渊。此卦显示当前正处于积蓄力量的阶段。",
+      "outcome": "吉",
+      "wuxing": "金",
+      "interpretation": "乾卦象征天，代表刚健、进取"
+    },
+    "expected_keywords": ["工作", "决策", "乾卦", "刚健"]
+  },
+  "易经-结果卡-测试": {
+    "scene": "divination",
+    "prompt_type": "answer",
+    "question_type": "decision",
+    "test_input": {
+      "question": "我应该投资这个项目吗？",
+      "hexagram_name": "坤卦",
+      "hexagram_number": 2,
+      "hexagram_summary": "元亨，利牝马之贞",
+      "hexagram_detail": "坤卦象征地，代表柔顺、包容、厚德载物。此卦提示应当顺势而为，以柔克刚。",
+      "outcome": "中吉",
+      "wuxing": "土",
+      "interpretation": "坤卦象征地，代表柔顺、包容"
+    },
+    "expected_keywords": ["投资", "项目", "坤卦", "建议"]
+  },
+  "塔罗牌-详情": {
+    "scene": "tarot",
+    "prompt_type": "detail",
+    "question_type": "general",
+    "test_input": {
+      "question": "我的感情运势如何？",
+      "card_name": "恋人",
+      "card_position": "正位",
+      "card_meaning": "爱情、选择、和谐、吸引力、价值观的统一"
+    },
+    "expected_keywords": ["感情", "恋人", "正位", "爱情"]
+  },
+  "塔罗牌-结果卡": {
+    "scene": "tarot",
+    "prompt_type": "answer",
+    "question_type": "general",
+    "test_input": {
+      "question": "我的事业发展如何？",
+      "card_name": "战车",
+      "card_position": "正位",
+      "card_meaning": "胜利、意志力、前进、自律、控制"
+    },
+    "expected_keywords": ["事业", "战车", "胜利", "发展"]
+  }
+}

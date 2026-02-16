@@ -104,6 +104,7 @@ func (s *authService) Register(req *model.RegisterRequest) (*model.AuthResponse,
 	user := &model.AuthUser{
 		Username:     req.Username,
 		PasswordHash: passwordHash,
+		Role:         "normal", // 默认为普通用户
 	}
 
 	if req.Email != "" {
@@ -118,12 +119,12 @@ func (s *authService) Register(req *model.RegisterRequest) (*model.AuthResponse,
 	}
 
 	// 7. 生成 JWT Token
-	token, err := s.jwtManager.GenerateToken(user.ID, user.Username)
+	token, err := s.jwtManager.GenerateToken(user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username)
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
@@ -186,12 +187,12 @@ func (s *authService) Login(req *model.LoginRequest) (*model.AuthResponse, error
 	}
 
 	// 5. 生成 JWT Token
-	token, err := s.jwtManager.GenerateToken(user.ID, user.Username)
+	token, err := s.jwtManager.GenerateToken(user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username)
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}

@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/AuthContext';
 import { Button } from './Button';
 import { Input } from './Input';
 import './LoginModal.css';
 
 export default function LoginModal() {
+  const navigate = useNavigate();
   const { showLoginModal, setShowLoginModal, login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +36,11 @@ export default function LoginModal() {
     setError('');
   };
 
+  const handleRegister = () => {
+    handleClose();
+    navigate('/register');
+  };
+
   return (
     <div className="login-modal-overlay" onClick={handleClose}>
       <div className="login-modal" onClick={(e) => e.stopPropagation()}>
@@ -50,7 +57,7 @@ export default function LoginModal() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="请输入用户名"
+            placeholder="请输入用户名/邮箱/手机号"
             required
           />
 
@@ -74,8 +81,15 @@ export default function LoginModal() {
             {loading ? '登录中...' : '登录'}
           </Button>
 
-          <div className="login-modal-tip">
-            💡 提示：目前为演示版本，输入任意用户名和密码即可登录
+          <div className="login-modal-footer">
+            <span className="login-modal-register-text">还没有账号？</span>
+            <button 
+              type="button"
+              className="login-modal-register-link" 
+              onClick={handleRegister}
+            >
+              立即注册
+            </button>
           </div>
         </form>
       </div>

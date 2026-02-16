@@ -1,0 +1,82 @@
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-100%);
+  animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.offline-banner--online {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  animation: slideDown 0.3s ease forwards, slideUp 0.3s ease 2.7s forwards;
+}
+
+@keyframes slideUp {
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.offline-banner__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.offline-banner__icon {
+  font-size: 20px;
+}
+
+.offline-banner__text {
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+}
+
+.offline-banner__button {
+  padding: 6px 16px;
+  border: 1px solid white;
+  border-radius: 6px;
+  background: transparent;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.offline-banner__button:hover {
+  background: white;
+  color: #EF4444;
+}
+
+.offline-banner__button:active {
+  transform: scale(0.96);
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .offline-banner {
+    padding: 10px 16px;
+  }
+
+  .offline-banner__text {
+    font-size: 13px;
+  }
+}

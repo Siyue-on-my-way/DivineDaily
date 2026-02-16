@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import HistoryDetailPage from './pages/HistoryDetailPage';
 import AboutPage from './pages/AboutPage';
+import RegisterPage from './pages/RegisterPage';
 import './App.css';
 
 function App() {
@@ -18,18 +19,19 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
-          <MobileLayout>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/divination" element={<DivinationPage />} />
-              <Route path="/tarot" element={<TarotPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/history" element={<HistoryPage />} />
-              <Route path="/history/:id" element={<HistoryDetailPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </MobileLayout>
+          <Routes>
+            {/* 普通用户路由 - 使用 MobileLayout */}
+            <Route path="/" element={<MobileLayout><HomePage /></MobileLayout>} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/divination" element={<MobileLayout><DivinationPage /></MobileLayout>} />
+            <Route path="/tarot" element={<MobileLayout><TarotPage /></MobileLayout>} />
+            <Route path="/profile" element={<MobileLayout><ProfilePage /></MobileLayout>} />
+            <Route path="/history" element={<MobileLayout><HistoryPage /></MobileLayout>} />
+            <Route path="/history/:id" element={<MobileLayout><HistoryDetailPage /></MobileLayout>} />
+            <Route path="/about" element={<MobileLayout><AboutPage /></MobileLayout>} />
+            
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
           <LoginModal />
           <ToastContainer />
         </Router>

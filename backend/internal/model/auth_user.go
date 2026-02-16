@@ -13,6 +13,7 @@ type AuthUser struct {
 	PasswordHash string     `json:"-" gorm:"column:password_hash;size:255;not null"`
 	Avatar       *string    `json:"avatar,omitempty" gorm:"size:255"`
 	Nickname     *string    `json:"nickname,omitempty" gorm:"size:50"`
+	Role         string     `json:"role" gorm:"size:20;default:'normal';index;not null"` // admin, normal
 	Status       int8       `json:"status" gorm:"default:1;index"`
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
 	CreatedAt    time.Time  `json:"created_at" gorm:"autoCreateTime"`
@@ -54,6 +55,7 @@ type UserInfo struct {
 	Phone    *string `json:"phone,omitempty"`
 	Avatar   *string `json:"avatar,omitempty"`
 	Nickname *string `json:"nickname,omitempty"`
+	Role     string  `json:"role"` // admin, normal
 }
 
 // ToUserInfo 转换为用户信息
@@ -65,7 +67,13 @@ func (u *AuthUser) ToUserInfo() *UserInfo {
 		Phone:    u.Phone,
 		Avatar:   u.Avatar,
 		Nickname: u.Nickname,
+		Role:     u.Role,
 	}
+}
+
+// IsAdmin 判断是否为管理员
+func (u *AuthUser) IsAdmin() bool {
+	return u.Role == "admin"
 }
 
 // UserSession 用户会话

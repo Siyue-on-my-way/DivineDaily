@@ -63,10 +63,22 @@ export default function RitualFlow() {
         question: question,
         version: 'CN',
         orientation: 'E'
-        // 移除 event_type，让后端 AI 自动分析
       });
 
-      setSessionId(startRes.data.id);
+      // 修复：后端返回的是 session_id，不是 id
+      const sessionIdFromResponse = startRes.data.session_id || startRes.data.id;
+      
+      if (!sessionIdFromResponse) {
+        // 如果后端直接返回了完整结果（不需要轮询）
+        if (startRes.data.summary && startRes.data.detail) {
+          setResult(startRes.data);
+          setStage(STAGES.RESULT);
+          return;
+        }
+        throw new Error('未获取到有效的会话ID');
+      }
+      
+      setSessionId(sessionIdFromResponse);
       
     } catch (err: any) {
       console.error('Divination failed', err);

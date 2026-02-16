@@ -85,12 +85,33 @@
   font-size: 14px;
 }
 
-.login-modal-tip {
-  padding: 12px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  color: #0369a1;
-  font-size: 13px;
-  line-height: 1.5;
+.login-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.login-modal-register-text {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.login-modal-register-link {
+  background: none;
+  border: none;
+  color: #10b981;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.login-modal-register-link:hover {
+  color: #059669;
+  text-decoration: underline;
 }

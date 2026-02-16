@@ -50,8 +50,8 @@ export const llmConfigApi = {
   },
 
   // 测试LLM配置
-  test: async (id: number): Promise<string> => {
-    const response = await api.post<ApiResponse<string>>(`/configs/llm/${id}/test`);
+  test: async (id: number, mode: 'block' | 'stream' = 'block'): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>(`/configs/llm/${id}/test`, { mode });
     return response.data.data;
   },
 };

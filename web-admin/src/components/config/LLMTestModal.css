@@ -1,0 +1,137 @@
+.llm-test-modal {
+  width: 700px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.config-info {
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.config-info .label {
+  font-weight: 600;
+  color: #666;
+}
+
+.config-info .value {
+  color: #1890ff;
+  margin-left: 8px;
+}
+
+.test-input-section {
+  margin-bottom: 20px;
+}
+
+.test-input-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.test-input-section textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.test-input-section textarea:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.test-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.test-result {
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.test-result.success {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.test-result.error {
+  background: #fff2e8;
+  border: 1px solid #ffbb96;
+}
+
+.result-header {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.result-section {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.message-box {
+  padding: 12px;
+  border-radius: 4px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.user-message {
+  background: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}
+
+.llm-response {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+}
+
+.result-meta {
+  display: flex;
+  gap: 20px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
+  font-size: 12px;
+  color: #999;
+}
+
+.error-content {
+  padding: 12px;
+}
+
+.error-message {
+  color: #ff4d4f;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.error-details {
+  font-size: 12px;
+  color: #666;
+}
+
+.error-details div {
+  margin-bottom: 4px;
+}
+

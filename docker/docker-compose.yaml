@@ -5,7 +5,12 @@ networks:
   divine-daily-network:
     driver: bridge
 
+volumes:
+  postgres_data:
+    driver: local
+
 services:
+  # PostgreSQL 数据库
   postgres:
     image: postgres:14
     container_name: divine-daily-postgres
@@ -16,7 +21,7 @@ services:
     ports:
       - "45432:5432"
     volumes:
-      - /data/divine/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U divinedaily"]
       interval: 10s
@@ -26,43 +31,82 @@ services:
     networks:
       - divine-daily-network
 
-  backend:
-    image: divine-daily-backend
-    container_name: divine-daily-backend
+  # Python 后端服务
+  backend-python:
+    image: divine-daily-backend-python
+    container_name: divine-daily-backend-python
     build:
-      context: ../backend
+      context: ../backend-python
       dockerfile: Dockerfile
-      args:
-        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
-        GOSUMDB: ${GOSUMDB:-sum.golang.org}
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
       DB_USER: divinedaily
       DB_PASSWORD: divinedaily123
       DB_NAME: divinedaily
-      DB_SSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production-please}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
     ports:
-      - "48000:8080"
+      - "48080:8080"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - divine-daily-network
     restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running database migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting application...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8080
+      "
 
-  frontend:
-    image: divine-daily-frontend
-    container_name: divine-daily-frontend
+  # 移动端前端（普通用户）
+  web:
+    image: divine-daily-web
+    container_name: divine-daily-web
     build:
       context: ../web
       dockerfile: Dockerfile
     environment:
-      VITE_API_PROXY_TARGET: http://backend:8080
+      # 使用 Python 后端
+      VITE_API_PROXY_TARGET: http://backend-python:8080
+      VITE_API_BASE_URL: /api/v1
+      VITE_APP_NAME: Divine Daily
     ports:
       - "40080:40080"
     depends_on:
-      - backend
+      - backend-python
     networks:
       - divine-daily-network
     restart: unless-stopped
+    volumes:
+      - ../web:/app
+      - /app/node_modules
+
+  # 管理后台前端（管理员）
+  web-admin:
+    image: divine-daily-web-admin
+    container_name: divine-daily-web-admin
+    build:
+      context: ../web-admin
+      dockerfile: Dockerfile
+    environment:
+      # 使用 Python 后端
+      VITE_API_PROXY_TARGET: http://backend-python:8080
+      VITE_API_BASE_URL: /api/v1
+      VITE_APP_NAME: Divine Daily Admin
+    ports:
+      - "40081:40081"
+    depends_on:
+      - backend-python
+    networks:
+      - divine-daily-network
+    restart: unless-stopped
+    volumes:
+      - ../web-admin:/app
+      - /app/node_modules

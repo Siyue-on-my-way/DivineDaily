@@ -56,6 +56,7 @@ func AuthMiddleware(jwtManager *jwt.JWTManager) gin.HandlerFunc {
 		// 4. 将用户信息注入到上下文
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
+		c.Set("user_role", claims.Role)
 
 		// 5. 继续处理请求
 		c.Next()
@@ -82,6 +83,7 @@ func OptionalAuthMiddleware(jwtManager *jwt.JWTManager) gin.HandlerFunc {
 		if err == nil {
 			c.Set("user_id", claims.UserID)
 			c.Set("username", claims.Username)
+			c.Set("user_role", claims.Role)
 		}
 
 		c.Next()
