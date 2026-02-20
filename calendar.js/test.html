@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国农历转换测试工具</title>
+    <script src="dist/js-calendar-converter.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft Yahei', '微软雅黑', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #555;
+            min-width: 80px;
+        }
+        .input-group input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 100px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .result-box {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-box.success {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+        .result-box.error {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+        .quick-test {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .quick-test-item {
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .quick-test-item h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .quick-test-item .result {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 中国农历（阴阳历）与公历互转测试工具</h1>
+        
+        <div class="info-box">
+            <p><strong>说明：</strong></p>
+            <p>• 公历转农历：输入公历年月日，转换为农历日期</p>
+            <p>• 农历转公历：输入农历年月日，转换为公历日期</p>
+            <p>• 支持日期范围：1900年1月31日 ~ 3000年12月1日</p>
+        </div>
+
+        <!-- 公历转农历 -->
+        <div class="test-section">
+            <h2>🌞 公历转农历</h2>
+            <div class="input-group">
+                <label>公历年：</label>
+                <input type="number" id="solarYear" placeholder="1987" value="1987">
+                <label>月：</label>
+                <input type="number" id="solarMonth" placeholder="11" value="11" min="1" max="12">
+                <label>日：</label>
+                <input type="number" id="solarDay" placeholder="1" value="1" min="1" max="31">
+                <button onclick="convertSolar2Lunar()">转换</button>
+                <button onclick="testToday()">今天</button>
+            </div>
+            <div id="solar2lunarResult" class="result-box"></div>
+        </div>
+
+        <!-- 农历转公历 -->
+        <div class="test-section">
+            <h2>🌙 农历转公历</h2>
+            <div class="input-group">
+                <label>农历年：</label>
+                <input type="number" id="lunarYear" placeholder="1987" value="1987">
+                <label>月：</label>
+                <input type="number" id="lunarMonth" placeholder="9" value="9" min="1" max="12">
+                <label>日：</label>
+                <input type="number" id="lunarDay" placeholder="10" value="10" min="1" max="30">
+                <label>
+                    <input type="checkbox" id="isLeapMonth"> 闰月
+                </label>
+                <button onclick="convertLunar2Solar()">转换</button>
+            </div>
+            <div id="lunar2solarResult" class="result-box"></div>
+        </div>
+
+        <!-- 快速测试 -->
+        <div class="test-section">
+            <h2>⚡ 快速测试</h2>
+            <div class="quick-test" id="quickTests"></div>
+        </div>
+    </div>
+
+    <script>
+        // 公历转农历
+        function convertSolar2Lunar() {
+            const year = parseInt(document.getElementById('solarYear').value);
+            const month = parseInt(document.getElementById('solarMonth').value);
+            const day = parseInt(document.getElementById('solarDay').value);
+            const resultBox = document.getElementById('solar2lunarResult');
+
+            if (!year || !month || !day) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = '❌ 请输入完整的日期';
+                return;
+            }
+
+            try {
+                const result = calendar.solar2lunar(year, month, day);
+                
+                if (result === -1) {
+                    resultBox.className = 'result-box error';
+                    resultBox.textContent = '❌ 日期超出支持范围或无效\n支持范围：1900年1月31日 ~ 3000年12月31日';
+                } else {
+                    resultBox.className = 'result-box success';
+                    resultBox.textContent = formatSolar2LunarResult(result);
+                }
+            } catch (error) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = '❌ 转换失败：' + error.message;
+            }
+        }
+
+        // 农历转公历
+        function convertLunar2Solar() {
+            const year = parseInt(document.getElementById('lunarYear').value);
+            const month = parseInt(document.getElementById('lunarMonth').value);
+            const day = parseInt(document.getElementById('lunarDay').value);
+            const isLeapMonth = document.getElementById('isLeapMonth').checked;
+            const resultBox = document.getElementById('lunar2solarResult');
+
+            if (!year || !month || !day) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = '❌ 请输入完整的日期';
+                return;
+            }
+
+            try {
+                const result = calendar.lunar2solar(year, month, day, isLeapMonth);
+                
+                if (result === -1) {
+                    resultBox.className = 'result-box error';
+                    resultBox.textContent = '❌ 日期超出支持范围或无效\n支持范围：1900年1月31日 ~ 3000年12月1日';
+                } else {
+                    resultBox.className = 'result-box success';
+                    resultBox.textContent = formatLunar2SolarResult(result);
+                }
+            } catch (error) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = '❌ 转换失败：' + error.message;
+            }
+        }
+
+        // 测试今天
+        function testToday() {
+            const today = new Date();
+            document.getElementById('solarYear').value = today.getFullYear();
+            document.getElementById('solarMonth').value = today.getMonth() + 1;
+            document.getElementById('solarDay').value = today.getDate();
+            convertSolar2Lunar();
+        }
+
+        // 格式化公历转农历结果
+        function formatSolar2LunarResult(result) {
+            return `✅ 转换成功！
+
+📅 公历日期：${result.cYear}年${result.cMonth}月${result.cDay}日
+🌙 农历日期：${result.lYear}年${result.IMonthCn}${result.IDayCn}
+${result.isLeap ? '（闰月）' : ''}
+
+📊 详细信息：
+• 天干地支年：${result.gzYear}
+• 天干地支月：${result.gzMonth}
+• 天干地支日：${result.gzDay}
+• 生肖：${result.Animal}
+• 星期：${result.ncWeek}
+• 星座：${result.astro}
+${result.isTerm ? `• 节气：${result.Term}` : ''}
+${result.festival ? `• 公历节日：${result.festival}` : ''}
+${result.lunarFestival ? `• 农历节日：${result.lunarFestival}` : ''}
+${result.isToday ? '• ⭐ 今天是这个日期' : ''}`;
+        }
+
+        // 格式化农历转公历结果
+        function formatLunar2SolarResult(result) {
+            return `✅ 转换成功！
+
+🌙 农历日期：${result.lYear}年${result.IMonthCn}${result.IDayCn}
+📅 公历日期：${result.cYear}年${result.cMonth}月${result.cDay}日
+
+📊 详细信息：
+• 天干地支年：${result.gzYear}
+• 天干地支月：${result.gzMonth}
+• 天干地支日：${result.gzDay}
+• 生肖：${result.Animal}
+• 星期：${result.ncWeek}
+• 星座：${result.astro}
+${result.isTerm ? `• 节气：${result.Term}` : ''}
+${result.festival ? `• 公历节日：${result.festival}` : ''}
+${result.lunarFestival ? `• 农历节日：${result.lunarFestival}` : ''}`;
+        }
+
+        // 快速测试
+        function runQuickTests() {
+            const testCases = [
+                { name: '今天', solar: () => {
+                    const d = new Date();
+                    return calendar.solar2lunar(d.getFullYear(), d.getMonth() + 1, d.getDate());
+                }},
+                { name: '1987-11-01', solar: () => calendar.solar2lunar(1987, 11, 1) },
+                { name: '2000-01-01', solar: () => calendar.solar2lunar(2000, 1, 1) },
+                { name: '2024-02-10', solar: () => calendar.solar2lunar(2024, 2, 10) },
+                { name: '农历1987-09-10', lunar: () => calendar.lunar2solar(1987, 9, 10) },
+            ];
+
+            const quickTestsDiv = document.getElementById('quickTests');
+            quickTestsDiv.innerHTML = '';
+
+            testCases.forEach(test => {
+                const item = document.createElement('div');
+                item.className = 'quick-test-item';
+                
+                let result;
+                try {
+                    if (test.solar) {
+                        result = test.solar();
+                    } else if (test.lunar) {
+                        result = test.lunar();
+                    }
+                    
+                    if (result === -1) {
+                        item.innerHTML = `<h3>${test.name}</h3><div class="result" style="color: red;">❌ 转换失败</div>`;
+                    } else {
+                        const date = test.solar 
+                            ? `${result.lYear}年${result.IMonthCn}${result.IDayCn}`
+                            : `${result.cYear}-${result.cMonth}-${result.cDay}`;
+                        item.innerHTML = `<h3>${test.name}</h3><div class="result">✅ ${date}</div>`;
+                    }
+                } catch (error) {
+                    item.innerHTML = `<h3>${test.name}</h3><div class="result" style="color: red;">❌ ${error.message}</div>`;
+                }
+                
+                quickTestsDiv.appendChild(item);
+            });
+        }
+
+        // 页面加载时运行快速测试
+        window.onload = function() {
+            runQuickTests();
+            // 默认测试今天
+            testToday();
+        };
+
+        // 支持回车键
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (e.target.id.includes('solar')) {
+                    convertSolar2Lunar();
+                } else if (e.target.id.includes('lunar')) {
+                    convertLunar2Solar();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

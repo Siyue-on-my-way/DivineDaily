@@ -1,0 +1,26 @@
+name: Publish NPM Package
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+
+      - name: Publish
+        run: |
+          sed -i "s/\"version\".*/\"version\": \"`echo ${{ github.ref_name }} | sed -e "s/^v//"`\",/g" ./package.json
+          cat ./package.json
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
