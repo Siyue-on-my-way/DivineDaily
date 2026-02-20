@@ -5,6 +5,7 @@ import { Button } from '../mobile/Button';
 import { Textarea } from '../mobile/Input';
 import { Card, CardContent } from '../mobile/Card';
 import DivinationResultCard from './DivinationResultCard';
+import { DivinationLoading } from './DivinationLoading';
 import { useAuth } from '../../lib/AuthContext';
 import { useDivinationPolling } from '../../hooks/useDivinationPolling';
 import { toast } from '../../hooks/useToast';
@@ -39,7 +40,7 @@ export default function RitualFlow() {
       setSessionId('');
       toast.error(error.message || '占卜失败，请重试');
     },
-    maxAttempts: 30,
+    maxAttempts: 60, // 增加到60次，配合60秒超时
     interval: 1000,
   });
 
@@ -96,6 +97,13 @@ export default function RitualFlow() {
     setSessionId('');
   };
 
+  const handleCancelLoading = () => {
+    polling.cancel();
+    setStage(STAGES.QUESTION);
+    setSessionId('');
+    toast.info('已取消占卜');
+  };
+
   return (
     <AnimatePresence mode="wait">
       {stage === STAGES.QUESTION && (
@@ -114,7 +122,7 @@ export default function RitualFlow() {
             <div className="ritual-section">
               <Textarea
                 label="你的问题"
-                placeholder="请输入你想要占卜的问题...&#10;&#10;例如：&#10;• 我应该和研究生学妹谈恋爱还是和大一学妹谈？&#10;• 我该跳槽到新公司吗？&#10;• 今天适合表白吗？"
+                placeholder="请输入你想要占卜的问题...&#10;&#10;例如：&#10;• 我应该和什么样的人谈恋爱？&#10;• 我该跳槽到新公司吗？&#10;• 今天适合表白吗？"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 rows={6}
@@ -162,21 +170,7 @@ export default function RitualFlow() {
       )}
 
       {stage === STAGES.LOADING && (
-        <motion.div
-          key="loading"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <MobilePage centered>
-            <div className="ritual-loading">
-              <div className="ritual-loading-icon">🔮</div>
-              <div className="ritual-loading-spinner" />
-              <h3 className="ritual-loading-title">正在占卜中...</h3>
-              <p className="ritual-loading-text">AI 正在分析问题并解读卦象</p>
-            </div>
-          </MobilePage>
-        </motion.div>
+        <DivinationLoading onCancel={handleCancelLoading} />
       )}
 
       {stage === STAGES.RESULT && result && (

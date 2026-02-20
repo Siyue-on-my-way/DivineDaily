@@ -130,3 +130,46 @@
 .profile-actions {
   margin-top: 20px;
 }
+
+.profile-item-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-birthday-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-lunar-info {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.profile-item-empty {
+  color: #9ca3af !important;
+}
+
+.profile-edit-btn {
+  padding: 6px 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.profile-edit-btn:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.profile-edit-btn:active {
+  transform: translateY(0);
+}

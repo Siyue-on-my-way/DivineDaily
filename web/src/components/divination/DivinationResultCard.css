@@ -113,3 +113,27 @@
   gap: var(--spacing-md);
   margin-top: var(--spacing-lg);
 }
+
+/* 桌面端响应式适配 */
+@media (min-width: 1024px) {
+  .divination-result-card {
+    max-width: 100%;
+    padding: 32px;
+  }
+  
+  .divination-result-card__header {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+  
+  .divination-result-card__content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  
+  .divination-result-card__section {
+    margin-bottom: 0;
+  }
+}

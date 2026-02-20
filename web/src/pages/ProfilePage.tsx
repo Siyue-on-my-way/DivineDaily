@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { MobilePage } from '../components/mobile';
 import { Button } from '../components/mobile/Button';
 import { Card, CardContent } from '../components/mobile/Card';
+import { BirthdayEditModal } from '../components/mobile/BirthdayEditModal';
 import { useAuth } from '../lib/AuthContext';
 import { divinationApi } from '../api/divination';
+import { profileApi, UserProfile } from '../api/profile';
 import { toast } from '../hooks/useToast';
 import './ProfilePage.css';
 
@@ -15,10 +17,13 @@ export default function ProfilePage() {
     shared_count: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user?.id) {
       loadStats();
+      loadProfile();
     }
   }, [isAuthenticated, user?.id]);
 
@@ -32,6 +37,41 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Failed to load stats', error);
       toast.error('加载统计数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProfile = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const data = await profileApi.getProfile(user.id);
+      setProfile(data);
+    } catch (error: any) {
+      if (error.message?.includes('404') || error.message?.includes('不存在')) {
+        console.log('User profile not found, will create on first edit');
+      } else {
+        console.error('Failed to load profile', error);
+      }
+    }
+  };
+
+  const handleSaveBirthday = async (birthDate: string, birthTime: string) => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      const updatedProfile = await profileApi.updateProfile(user.id, {
+        birth_date: birthDate,
+        birth_time: birthTime || undefined,
+      });
+      setProfile(updatedProfile);
+      setShowBirthdayModal(false);
+      toast.success('生日信息已更新');
+    } catch (error: any) {
+      console.error('Failed to update birthday', error);
+      toast.error(error.message || '更新失败');
     } finally {
       setLoading(false);
     }
@@ -85,6 +125,32 @@ export default function ProfilePage() {
                 <span className="profile-item-label">用户ID</span>
                 <span className="profile-item-value">{user?.id}</span>
               </div>
+              <div className="profile-item">
+                <span className="profile-item-label">生日</span>
+                <div className="profile-item-right">
+                  {profile?.birth_date ? (
+                    <div className="profile-birthday-info">
+                      <span className="profile-item-value">
+                        {profile.birth_date}
+                        {profile.birth_time && ` ${profile.birth_time}`}
+                      </span>
+                      {profile.lunar_month_cn && profile.lunar_day_cn && (
+                        <span className="profile-lunar-info">
+                          农历 {profile.lunar_month_cn}{profile.lunar_day_cn}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="profile-item-value profile-item-empty">未设置</span>
+                  )}
+                  <button
+                    className="profile-edit-btn"
+                    onClick={() => setShowBirthdayModal(true)}
+                  >
+                    编辑
+                  </button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -117,6 +183,14 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
+      <BirthdayEditModal
+        isOpen={showBirthdayModal}
+        onClose={() => setShowBirthdayModal(false)}
+        currentBirthDate={profile?.birth_date || ''}
+        currentBirthTime={profile?.birth_time || ''}
+        onSave={handleSaveBirthday}
+      />
     </MobilePage>
   );
 }

@@ -39,6 +39,30 @@ async def get_my_profile(
     return profile
 
 
+@router.get("/profile/{user_id}", response_model=UserProfileInfo, tags=["用户档案"])
+async def get_user_profile(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    service: UserProfileService = Depends(get_profile_service)
+):
+    """
+    获取指定用户档案
+    
+    - 需要登录
+    - 普通用户只能查看自己的档案
+    - 管理员可以查看任何用户的档案
+    """
+    # 安全检查：普通用户只能查看自己的档案
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise NotFoundError("无权访问其他用户的档案")
+    
+    profile = await service.get_profile(user_id)
+    if not profile:
+        raise NotFoundError("用户档案不存在，请先创建")
+    
+    return profile
+
+
 @router.post("/profile", response_model=UserProfileInfo, tags=["用户档案"])
 async def create_my_profile(
     profile_data: UserProfileCreate,
@@ -53,6 +77,30 @@ async def create_my_profile(
     - 自动计算农历、生肖、星座、八字
     """
     profile = await service.create_profile(current_user.id, profile_data)
+    return profile
+
+
+@router.put("/profile/{user_id}", response_model=UserProfileInfo, tags=["用户档案"])
+async def update_user_profile(
+    user_id: int,
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    service: UserProfileService = Depends(get_profile_service)
+):
+    """
+    更新指定用户档案
+    
+    - 需要登录
+    - 普通用户只能更新自己的档案
+    - 管理员可以更新任何用户的档案
+    - 只更新提供的字段
+    - 如果生日更新，自动重新计算命理信息
+    """
+    # 安全检查：普通用户只能更新自己的档案
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise NotFoundError("无权修改其他用户的档案")
+    
+    profile = await service.update_profile(user_id, profile_data)
     return profile
 
 

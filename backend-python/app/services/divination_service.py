@@ -1,4 +1,10 @@
-"""占卜主服务"""
+"""占卜主服务（基础版本，不包含 LLM 增强）
+
+⚠️ 警告：请勿直接在 API 路由中使用此服务！
+应该使用 EnhancedDivinationService，它包含 LLM 智能增强功能。
+
+此类仅作为基类存在，供 EnhancedDivinationService 继承使用。
+"""
 
 import uuid
 from datetime import datetime
@@ -12,7 +18,11 @@ from app.core.exceptions import BadRequestError, NotFoundError
 
 
 class DivinationService:
-    """占卜主服务"""
+    """占卜主服务（基础版本）
+    
+    ⚠️ 注意：此类不包含 LLM 增强功能，仅提供基础占卜能力。
+    在 API 路由中应该使用 EnhancedDivinationService。
+    """
     
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -20,7 +30,7 @@ class DivinationService:
         self.tarot_service = TarotService()
     
     async def start_divination(self, request: CreateDivinationRequest) -> DivinationResult:
-        """开始占卜"""
+        """开始占卜（基础版本，无 LLM 增强）"""
         # 创建会话
         session_id = str(uuid.uuid4())
         session = DivinationSessionModel(
@@ -28,7 +38,7 @@ class DivinationService:
             user_id=request.user_id,
             version=request.version,
             question=request.question,
-            event_type=request.event_type or "general",  # 提供默认值
+            event_type=request.event_type or "general",
             orientation=request.orientation,
             spread=request.spread,
             intent=request.intent,

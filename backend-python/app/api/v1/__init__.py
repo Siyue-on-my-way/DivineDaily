@@ -1,7 +1,7 @@
 """API v1 路由"""
 
 from fastapi import APIRouter
-from app.api.v1 import auth, admin, divination
+from app.api.v1 import auth, admin, divination, user_profile, orientation
 
 router = APIRouter()
 
@@ -9,6 +9,8 @@ router = APIRouter()
 router.include_router(auth.router, prefix="/auth", tags=["认证"])
 router.include_router(admin.router, prefix="/configs", tags=["配置管理"])
 router.include_router(divination.router, prefix="/divinations", tags=["占卜"])
+router.include_router(user_profile.router, tags=["用户档案"])
+router.include_router(orientation.router, prefix="/orientation", tags=["方位推荐"])
 
 # TODO: 其他路由需要先实现对应的服务和API
 # 暂时返回简单的占位响应，避免404错误

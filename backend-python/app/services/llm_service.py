@@ -83,7 +83,9 @@ class OpenAICompatibleLLMService(LLMService):
                 raise ValueError("Invalid response format")
         
         except Exception as e:
-            print(f"LLM调用失败: {e}")
+            import traceback
+            print(f"LLM调用失败: {type(e).__name__}: {str(e)}")
+            print(f"详细错误:\n{traceback.format_exc()}")
             # 降级到Mock服务
             return await MockLLMService().generate(prompt)
     

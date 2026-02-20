@@ -99,9 +99,8 @@ class UserProfileService:
     
     def _calculate_destiny_info(self, profile: UserProfile, birth_date: date):
         """计算命理信息"""
-        # 转换为农历
-        birth_datetime = datetime(birth_date.year, birth_date.month, birth_date.day)
-        lunar_info = self.time_service.solar_to_lunar(birth_datetime)
+        # 转换为农历 - 修复：传入year, month, day三个参数
+        lunar_info = self.time_service.solar_to_lunar(birth_date.year, birth_date.month, birth_date.day)
         
         # 设置农历生日
         profile.lunar_birth = f"{lunar_info['lunar_year']}年{lunar_info['lunar_month_cn']}{lunar_info['lunar_day_cn']}"

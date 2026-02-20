@@ -1,0 +1,46 @@
+.desktop-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.desktop-layout__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+.desktop-layout__main--expanded {
+  margin-left: 80px;
+}
+
+.desktop-layout__content {
+  flex: 1;
+  padding: 32px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1440px) {
+  .desktop-layout__content {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .desktop-layout__main {
+    margin-left: 240px;
+  }
+  
+  .desktop-layout__main--expanded {
+    margin-left: 0;
+  }
+  
+  .desktop-layout__content {
+    padding: 20px;
+  }
+}
+

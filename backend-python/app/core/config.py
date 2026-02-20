@@ -20,6 +20,18 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "divinedaily123")
     DB_NAME: str = os.getenv("DB_NAME", "divinedaily")
     
+    # Redis配置
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
+    REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "")
+    REDIS_ENABLED: bool = os.getenv("REDIS_ENABLED", "true").lower() == "true"
+    
+    # 缓存配置
+    CACHE_TTL_DEFAULT: int = int(os.getenv("CACHE_TTL_DEFAULT", "3600"))  # 1小时
+    CACHE_TTL_SHORT: int = int(os.getenv("CACHE_TTL_SHORT", "300"))  # 5分钟
+    CACHE_TTL_LONG: int = int(os.getenv("CACHE_TTL_LONG", "86400"))  # 24小时
+    
     # JWT 配置
     JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-key-please-change-in-production")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
@@ -32,6 +44,13 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:
         """数据库连接 URL"""
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    
+    @property
+    def REDIS_URL(self) -> str:
+        """Redis连接 URL"""
+        if self.REDIS_PASSWORD:
+            return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
     
     class Config:
         env_file = ".env"

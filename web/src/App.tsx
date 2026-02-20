@@ -3,8 +3,8 @@ import { AuthProvider } from './lib/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ui/Toast';
 import LoginModal from './components/mobile/LoginModal';
-import { MobileLayout } from './components/mobile/MobileLayout';
-import HomePage from './pages/HomePage';
+import { ResponsiveLayout } from './components/desktop/ResponsiveLayout';
+import HomePageResponsive from './pages/HomePageResponsive';
 import DivinationPage from './pages/DivinationPage';
 import TarotPage from './pages/TarotPage';
 import ProfilePage from './pages/ProfilePage';
@@ -20,15 +20,15 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* 普通用户路由 - 使用 MobileLayout */}
-            <Route path="/" element={<MobileLayout><HomePage /></MobileLayout>} />
+            {/* 使用响应式布局 */}
+            <Route path="/" element={<ResponsiveLayout><HomePageResponsive /></ResponsiveLayout>} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/divination" element={<MobileLayout><DivinationPage /></MobileLayout>} />
-            <Route path="/tarot" element={<MobileLayout><TarotPage /></MobileLayout>} />
-            <Route path="/profile" element={<MobileLayout><ProfilePage /></MobileLayout>} />
-            <Route path="/history" element={<MobileLayout><HistoryPage /></MobileLayout>} />
-            <Route path="/history/:id" element={<MobileLayout><HistoryDetailPage /></MobileLayout>} />
-            <Route path="/about" element={<MobileLayout><AboutPage /></MobileLayout>} />
+            <Route path="/divination" element={<ResponsiveLayout><DivinationPage /></ResponsiveLayout>} />
+            <Route path="/tarot" element={<ResponsiveLayout><TarotPage /></ResponsiveLayout>} />
+            <Route path="/profile" element={<ResponsiveLayout><ProfilePage /></ResponsiveLayout>} />
+            <Route path="/history" element={<ResponsiveLayout><HistoryPage /></ResponsiveLayout>} />
+            <Route path="/history/:id" element={<ResponsiveLayout><HistoryDetailPage /></ResponsiveLayout>} />
+            <Route path="/about" element={<ResponsiveLayout><AboutPage /></ResponsiveLayout>} />
             
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

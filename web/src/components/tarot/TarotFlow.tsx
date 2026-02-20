@@ -95,7 +95,7 @@ export default function TarotFlow() {
         orientation: 'E'
       });
 
-      setSessionId(startRes.data.id);
+      setSessionId(startRes.data.session_id);
       
     } catch (err: any) {
       console.error('Tarot reading failed', err);

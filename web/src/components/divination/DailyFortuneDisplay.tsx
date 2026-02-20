@@ -104,3 +104,5 @@ export default function DailyFortuneDisplay({ info }: Props) {
     </div>
   );
 }
+
+/* 桌面端响应式适配已内置 */

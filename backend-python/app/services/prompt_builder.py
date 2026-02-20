@@ -1,6 +1,6 @@
 """Prompt构建器（智能Prompt生成）"""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from app.services.question_analyzer import QuestionAnalysis
 
 
@@ -8,10 +8,17 @@ class PromptBuilder:
     """智能Prompt构建器"""
     
     @staticmethod
-    def build_answer_prompt(question: str, hexagram_info: Dict[str, Any], 
+    def build_answer_prompt(question: str, hexagram_info: Union[Dict[str, Any], Any], 
                            user_profile: Optional[Dict[str, Any]] = None,
                            analysis: Optional[QuestionAnalysis] = None) -> str:
         """构建答案Prompt（结果卡）"""
+        
+        # 兼容字典和Pydantic对象
+        def get_value(obj, key, default=''):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            else:
+                return getattr(obj, key, default)
         
         # 基础信息
         base_prompt = f"""你是一位精通周易的占卜大师。用户向你请教人生抉择，你需要给出明确、实用的建议。
@@ -19,9 +26,9 @@ class PromptBuilder:
 用户问题：{question}
 
 本次卦象：
-- 卦名：{hexagram_info.get('name', '未知')}
-- 卦辞：{hexagram_info.get('summary', '')}
-- 吉凶：{hexagram_info.get('outcome', '')}
+- 卦名：{get_value(hexagram_info, 'name', '未知')}
+- 卦辞：{get_value(hexagram_info, 'summary', '')}
+- 吉凶：{get_value(hexagram_info, 'outcome', '')}
 """
         
         # 添加用户档案信息
@@ -64,19 +71,26 @@ class PromptBuilder:
         return base_prompt
     
     @staticmethod
-    def build_detail_prompt(question: str, hexagram_info: Dict[str, Any],
+    def build_detail_prompt(question: str, hexagram_info: Union[Dict[str, Any], Any],
                            user_profile: Optional[Dict[str, Any]] = None) -> str:
         """构建详情Prompt"""
+        
+        # 兼容字典和Pydantic对象
+        def get_value(obj, key, default=''):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            else:
+                return getattr(obj, key, default)
         
         prompt = f"""你是一位精通周易的占卜师。根据以下信息为用户详细解卦：
 
 用户问题：{question}
 
 本次卦象：
-- 卦名：{hexagram_info.get('name', '')}
-- 卦辞：{hexagram_info.get('summary', '')}
-- 详细解释：{hexagram_info.get('detail', '')}
-- 吉凶：{hexagram_info.get('outcome', '')}
+- 卦名：{get_value(hexagram_info, 'name', '')}
+- 卦辞：{get_value(hexagram_info, 'summary', '')}
+- 详细解释：{get_value(hexagram_info, 'detail', '')}
+- 吉凶：{get_value(hexagram_info, 'outcome', '')}
 """
         
         if user_profile:

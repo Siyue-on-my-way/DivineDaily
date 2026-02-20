@@ -1,0 +1,75 @@
+.desktop-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.desktop-card--compact {
+  padding: 24px;
+}
+
+.desktop-card--spacious {
+  padding: 48px;
+}
+
+.desktop-card--hoverable:hover,
+.desktop-card--clickable:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.desktop-card--clickable {
+  cursor: pointer;
+}
+
+.desktop-card--primary {
+  background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%);
+  border: 2px solid var(--sage-green-light);
+}
+
+.desktop-card--success {
+  background: #e8f5e9;
+  border: 2px solid #4caf50;
+}
+
+.desktop-card--warning {
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+}
+
+.desktop-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.desktop-card__header-content {
+  flex: 1;
+}
+
+.desktop-card__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.desktop-card__subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.desktop-card__actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.desktop-card__body {
+  color: var(--text-primary);
+}
+

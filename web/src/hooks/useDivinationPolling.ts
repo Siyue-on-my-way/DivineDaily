@@ -6,6 +6,7 @@ interface UseDivinationPollingOptions {
   sessionId: string;
   onSuccess: (result: DivinationResult) => void;
   onError: (error: Error) => void;
+  onProgress?: (elapsed: number, attempts: number) => void;
   maxAttempts?: number;
   interval?: number;
 }
@@ -14,13 +15,15 @@ export const useDivinationPolling = ({
   sessionId,
   onSuccess,
   onError,
-  maxAttempts = 30,
+  onProgress,
+  maxAttempts = 60, // 增加到60次，配合60秒超时
   interval = 1000,
 }: UseDivinationPollingOptions) => {
   const attemptsRef = useRef(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
+  const startTimeRef = useRef<number>(0);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -46,11 +49,17 @@ export const useDivinationPolling = ({
 
     if (attemptsRef.current >= maxAttempts) {
       cleanup();
-      onError(new Error('占卜超时，请重试'));
+      onError(new Error('占卜超时，请重试。如果问题持续，请联系客服。'));
       return;
     }
 
     attemptsRef.current += 1;
+
+    // 计算已用时间并触发进度回调
+    const elapsed = Date.now() - startTimeRef.current;
+    if (onProgress) {
+      onProgress(elapsed, attemptsRef.current);
+    }
 
     try {
       // 创建新的 AbortController
@@ -59,7 +68,10 @@ export const useDivinationPolling = ({
       // 修复：去掉 /result 后缀，匹配后端 API 路径
       const response = await axiosInstance.get<DivinationResult>(
         `/divinations/${sessionId}`,
-        { signal: abortControllerRef.current.signal }
+        { 
+          signal: abortControllerRef.current.signal,
+          timeout: 10000 // 单次请求10秒超时
+        }
       );
 
       if (!isMountedRef.current) {
@@ -81,6 +93,17 @@ export const useDivinationPolling = ({
         return;
       }
 
+      // 如果是404，说明结果还未生成，继续轮询
+      if (error.response?.status === 404) {
+        if (attemptsRef.current < maxAttempts) {
+          timerRef.current = setTimeout(pollResult, interval);
+        } else {
+          cleanup();
+          onError(new Error('占卜超时，请重试'));
+        }
+        return;
+      }
+
       // 如果还有重试次数，继续轮询
       if (attemptsRef.current < maxAttempts) {
         timerRef.current = setTimeout(pollResult, interval);
@@ -89,7 +112,7 @@ export const useDivinationPolling = ({
         onError(error);
       }
     }
-  }, [sessionId, maxAttempts, interval, onSuccess, onError, cleanup]);
+  }, [sessionId, maxAttempts, interval, onSuccess, onError, onProgress, cleanup]);
 
   useEffect(() => {
     // 如果没有 sessionId，不启动轮询
@@ -99,8 +122,9 @@ export const useDivinationPolling = ({
 
     isMountedRef.current = true;
     attemptsRef.current = 0; // 重置尝试次数
+    startTimeRef.current = Date.now(); // 记录开始时间
     
-    // 延迟 2 秒后开始第一次轮询
+    // 延迟 2 秒后开始第一次轮询（给后端处理时间）
     timerRef.current = setTimeout(pollResult, 2000);
 
     // 清理函数

@@ -8,13 +8,17 @@ export const breakpoints = {
 };
 
 export type ScreenSize = 'mobile' | 'tablet' | 'desktop' | 'wide';
+export type LayoutMode = 'mobile' | 'desktop';
 
 export function useResponsive() {
   const [screenSize, setScreenSize] = useState<ScreenSize>('mobile');
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('mobile');
 
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
+      
+      // 确定屏幕尺寸
       if (width >= breakpoints.wide) {
         setScreenSize('wide');
       } else if (width >= breakpoints.desktop) {
@@ -24,6 +28,13 @@ export function useResponsive() {
       } else {
         setScreenSize('mobile');
       }
+
+      // 确定布局模式
+      if (width >= breakpoints.desktop) {
+        setLayoutMode('desktop');
+      } else {
+        setLayoutMode('mobile');
+      }
     };
 
     handleResize();
@@ -32,10 +43,22 @@ export function useResponsive() {
   }, []);
 
   return {
+    // 屏幕尺寸判断
     isMobile: screenSize === 'mobile',
     isTablet: screenSize === 'tablet',
     isDesktop: screenSize === 'desktop' || screenSize === 'wide',
     isWide: screenSize === 'wide',
     screenSize,
+    
+    // 布局模式判断
+    layoutMode,
+    isDesktopLayout: layoutMode === 'desktop',
+    isMobileLayout: layoutMode === 'mobile',
+    
+    // 断点值
+    breakpoints,
+    
+    // 当前宽度
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
   };
 }
