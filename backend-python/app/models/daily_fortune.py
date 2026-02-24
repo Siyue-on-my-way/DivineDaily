@@ -11,28 +11,28 @@ class DailyFortune(Base):
     __tablename__ = "daily_fortunes"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(50), nullable=False, index=True)
-    date = Column(Date, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    fortune_date = Column(Date, nullable=False, index=True)
     
-    # 基础运势
-    score = Column(Integer, nullable=False)  # 0-100
-    summary = Column(Text, nullable=False)
+    # 基础运势评分
+    overall_score = Column(Integer, nullable=False, default=70)  # 0-100
+    wealth_score = Column(Integer, nullable=False, default=70)
+    career_score = Column(Integer, nullable=False, default=70)
+    love_score = Column(Integer, nullable=False, default=70)
+    health_score = Column(Integer, nullable=False, default=70)
     
-    # 详细建议
-    wealth = Column(Text, nullable=False)
-    career = Column(Text, nullable=False)
-    love = Column(Text, nullable=False)
-    health = Column(Text, nullable=False)
+    # 运势内容
+    content = Column(Text, nullable=False, default='')
     
     # 幸运指南
-    lucky_color = Column(String(50), nullable=False)
-    lucky_number = Column(String(50), nullable=False)
-    lucky_direction = Column(String(50), nullable=False)
-    lucky_time = Column(String(50), nullable=False)
+    lucky_color = Column(String(50), nullable=False, default='白色')
+    lucky_number = Column(Integer, nullable=False, default=8)
+    lucky_direction = Column(String(50), nullable=False, default='东')
+    lucky_time = Column(String(50), nullable=False, default='辰时(07:00-09:00)')
     
-    # 宜忌
-    yi = Column(JSON, nullable=False)  # List[str]
-    ji = Column(JSON, nullable=False)  # List[str]
+    # 宜忌（存储为逗号分隔的字符串）
+    yi = Column(String(200), nullable=False, default='')
+    ji = Column(String(200), nullable=False, default='')
     
     # 节气/节日
     solar_term = Column(String(50), default='')
@@ -41,4 +41,4 @@ class DailyFortune(Base):
     created_at = Column(Date, server_default=func.current_date(), nullable=False)
     
     def __repr__(self):
-        return f"<DailyFortune(user_id={self.user_id}, date={self.date}, score={self.score})>"
+        return f"<DailyFortune(user_id={self.user_id}, date={self.fortune_date}, score={self.overall_score})>"

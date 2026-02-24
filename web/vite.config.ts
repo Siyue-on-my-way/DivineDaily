@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
+      allowedHosts: ['web', 'localhost', '8.148.26.166', '.8.148.26.166', 'dd.twjob.cn', '.twjob.cn'],
       proxy: {
         '/api': {
           target: apiProxyTarget,

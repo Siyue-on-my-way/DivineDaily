@@ -7,14 +7,14 @@ export default function AdminDashboard() {
       title: 'LLM 配置',
       description: '管理 LLM 模型配置，包括 API 密钥、端点等',
       icon: '🤖',
-      link: '/llm-config',
+      link: '/admin/llm-config',
       color: '#4CAF50',
     },
     {
       title: 'Assistant 配置',
       description: '管理 AI Assistant，包括占卜、塔罗等场景的智能助手',
       icon: '📝',
-      link: '/prompt-config',
+      link: '/admin/prompt-config',
       color: '#2196F3',
     },
     {

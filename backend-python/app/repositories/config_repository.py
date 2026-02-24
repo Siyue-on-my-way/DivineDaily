@@ -41,7 +41,7 @@ class PromptConfigRepository:
             query = query.where(PromptConfig.question_type == question_type)
         
         # 优先获取默认配置
-        query = query.order_by(PromptConfig.is_default.desc())
+        query = query.order_by(PromptConfig.is_default.desc()).limit(1)
         
         result = await self.db.execute(query)
         config = result.scalar_one_or_none()

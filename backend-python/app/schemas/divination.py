@@ -34,18 +34,18 @@ class RecommendationItem(BaseModel):
 
 class DailyFortuneInfo(BaseModel):
     """每日运势信息"""
-    score: int = Field(..., ge=0, le=100, description="综合评分")
-    summary: str = Field(..., description="运势概述")
-    wealth: str = Field(..., description="财运")
-    career: str = Field(..., description="事业")
-    love: str = Field(..., description="感情")
-    health: str = Field(..., description="健康")
+    overall_score: int = Field(..., ge=0, le=100, description="综合评分")
+    wealth_score: int = Field(..., ge=0, le=100, description="财运评分")
+    career_score: int = Field(..., ge=0, le=100, description="事业评分")
+    love_score: int = Field(..., ge=0, le=100, description="感情评分")
+    health_score: int = Field(..., ge=0, le=100, description="健康评分")
+    content: str = Field(..., description="运势内容")
     lucky_color: str = Field(..., description="幸运色")
-    lucky_number: str = Field(..., description="幸运数字")
+    lucky_number: int = Field(..., description="幸运数字")
     lucky_direction: str = Field(..., description="幸运方位")
     lucky_time: str = Field(..., description="幸运时辰")
-    yi: List[str] = Field(default_factory=list, description="宜")
-    ji: List[str] = Field(default_factory=list, description="忌")
+    yi: str = Field("", description="宜（逗号分隔）")
+    ji: str = Field("", description="忌（逗号分隔）")
     solar_term: str = Field("", description="节气")
     festival: str = Field("", description="节日")
 

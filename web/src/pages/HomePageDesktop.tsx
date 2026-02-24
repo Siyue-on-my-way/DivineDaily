@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { fortuneApi } from '../api/fortune';
 import { divinationApi } from '../api/divination';
-import type { DailyFortuneInfo, DivinationResult } from '../types/divination';
+import type { DailyFortuneInfo, DivinationSession } from '../types/divination';
+import { Card, CardContent, CardHeader } from '../components/mobile/Card';
+import { Button } from '../components/mobile/Button';
 import './HomePageDesktop.css';
 
 export default function HomePageDesktop() {
   const navigate = useNavigate();
   const { isAuthenticated, user, setShowLoginModal } = useAuth();
   const [fortune, setFortune] = useState<DailyFortuneInfo | null>(null);
-  const [recentDivinations, setRecentDivinations] = useState<DivinationResult[]>([]);
+  const [recentDivinations, setRecentDivinations] = useState<DivinationSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, thisWeek: 0, thisMonth: 0 });
 
@@ -25,13 +27,13 @@ export default function HomePageDesktop() {
     
     setLoading(true);
     try {
-      const [fortuneData, historyData] = await Promise.all([
+      const [fortuneData, historyResponse] = await Promise.all([
         fortuneApi.getDaily({ user_id: user.id }).catch(() => null),
-        divinationApi.getHistory({ user_id: user.id, limit: 5 }).catch(() => []),
+        divinationApi.getHistory({ user_id: user.id, limit: 5 }).catch(() => ({ sessions: [], total: 0, limit: 5, offset: 0, has_more: false })),
       ]);
       
       setFortune(fortuneData);
-      const history = Array.isArray(historyData) ? historyData : [];
+      const history = historyResponse.sessions;
       setRecentDivinations(history);
       
       // 计算统计数据
@@ -41,8 +43,8 @@ export default function HomePageDesktop() {
       
       setStats({
         total: history.length,
-        thisWeek: history.filter(d => new Date(d.created_at) > weekAgo).length,
-        thisMonth: history.filter(d => new Date(d.created_at) > monthAgo).length,
+        thisWeek: history.filter((d: any) => new Date(d.created_at) > weekAgo).length,
+        thisMonth: history.filter((d: any) => new Date(d.created_at) > monthAgo).length,
       });
     } catch (error) {
       console.error('Failed to load home data', error);
@@ -51,185 +53,122 @@ export default function HomePageDesktop() {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return '#4caf50';
-    if (score >= 60) return '#8bc34a';
-    if (score >= 40) return '#ffc107';
-    return '#ff9800';
+  const handleStartDivination = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    navigate('/divination');
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) return '今天';
-    if (days === 1) return '昨天';
-    if (days < 7) return `${days}天前`;
-    return date.toLocaleDateString('zh-CN');
+  // 辅助函数：将逗号分隔的字符串转换为数组
+  const parseCommaSeparated = (str: string | undefined): string[] => {
+    if (!str) return [];
+    return str.split(',').map(item => item.trim()).filter(item => item);
   };
-
-  if (loading) {
-    return (
-      <div className="desktop-loading">
-        <div className="desktop-loading__spinner" />
-        <div className="desktop-loading__text">加载中...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="home-desktop">
       {/* Hero Section */}
-      <section className="home-hero">
+      <div className="home-hero">
         <div className="home-hero__content">
           <h1 className="home-hero__title">
-            {isAuthenticated ? `你好，${user?.username} 🌿` : '欢迎来到 Divine Daily'}
+            Divine Daily
           </h1>
           <p className="home-hero__subtitle">
-            {isAuthenticated 
-              ? '让古老的智慧指引你的每一天' 
-              : '结合传统占卜与现代AI，为你提供智能化的人生指引'}
+            让占卜更智能 - 结合传统玄学与现代AI的智能占卜平台
           </p>
-          {!isAuthenticated && (
             <div className="home-hero__actions">
-              <button 
-                className="desktop-btn desktop-btn--primary desktop-btn--large"
-                onClick={() => setShowLoginModal(true)}
-              >
-                立即开始
-              </button>
-              <button 
-                className="desktop-btn desktop-btn--outline desktop-btn--large"
-                onClick={() => navigate('/register')}
-              >
-                注册账号
-              </button>
+            <Button variant="primary" size="lg" onClick={handleStartDivination}>
+              开始占卜
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => navigate('/about')}>
+              了解更多
+            </Button>
             </div>
-          )}
         </div>
         <div className="home-hero__decoration">
           <div className="home-hero__circle home-hero__circle--1">🔮</div>
           <div className="home-hero__circle home-hero__circle--2">🎴</div>
-          <div className="home-hero__circle home-hero__circle--3">🌿</div>
+          <div className="home-hero__circle home-hero__circle--3">✨</div>
         </div>
-      </section>
+      </div>
 
       {/* 主要内容区 */}
       <div className="home-content">
-        {/* 左侧：快速占卜 + 每日运势 */}
         <div className="home-main">
           {/* 快速占卜 */}
-          <section className="desktop-card">
-            <div className="desktop-card__header">
-              <h2 className="desktop-card__title">快速占卜</h2>
-              <p className="desktop-card__subtitle">选择你感兴趣的占卜方式</p>
-            </div>
+          <Card>
+            <CardHeader title="快速占卜" subtitle="选择您喜欢的占卜方式" />
+            <CardContent>
             <div className="home-divination-grid">
-              <div 
-                className="home-divination-card"
-                onClick={() => navigate('/divination')}
-              >
+                <div className="home-divination-card" onClick={handleStartDivination}>
+                  <div className="home-divination-card__badge">热门</div>
                 <div className="home-divination-card__icon">🔮</div>
                 <h3 className="home-divination-card__title">周易占卜</h3>
-                <p className="home-divination-card__desc">古老的六爻智慧，为你指点迷津</p>
-                <div className="home-divination-card__badge">传统</div>
-              </div>
-              <div 
-                className="home-divination-card"
-                onClick={() => navigate('/tarot')}
-              >
-                <div className="home-divination-card__icon">🎴</div>
-                <h3 className="home-divination-card__title">塔罗占卜</h3>
-                <p className="home-divination-card__desc">神秘的塔罗牌阵，探索未知答案</p>
-                <div className="home-divination-card__badge">神秘</div>
-              </div>
-            </div>
-          </section>
-
-          {/* 每日运势 */}
-          {isAuthenticated && fortune && (
-            <section className="desktop-card">
-              <div className="desktop-card__header">
-                <div>
-                  <h2 className="desktop-card__title">今日运势</h2>
-                  <p className="desktop-card__subtitle">
-                    {new Date().toLocaleDateString('zh-CN', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric',
-                      weekday: 'long'
-                    })}
+                  <p className="home-divination-card__desc">
+                    古老的东方智慧，通过六爻卦象为您指引方向
                   </p>
                 </div>
-                <div 
-                  className="home-fortune-score"
-                  style={{ background: getScoreColor(fortune.score) }}
-                >
-                  {fortune.score}
+                <div className="home-divination-card" onClick={() => navigate('/tarot')}>
+                  <div className="home-divination-card__badge">推荐</div>
+                  <div className="home-divination-card__icon">🎴</div>
+                  <h3 className="home-divination-card__title">塔罗占卜</h3>
+                  <p className="home-divination-card__desc">
+                    神秘的西方塔罗，探索未知的答案和可能性
+                  </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
               
+          {/* 每日运势 */}
+          {fortune && (
+            <Card>
+              <CardHeader title="今日运势" subtitle={`综合评分: ${fortune.overall_score}分`} />
+              <CardContent>
               <div className="home-fortune-content">
-                <p className="home-fortune-summary">{fortune.summary}</p>
-                
-                <div className="home-fortune-details">
-                  <div className="home-fortune-detail">
-                    <span className="home-fortune-detail__label">💰 财运</span>
-                    <span className="home-fortune-detail__value">{fortune.wealth || '平稳'}</span>
-                  </div>
-                  <div className="home-fortune-detail">
-                    <span className="home-fortune-detail__label">💼 事业</span>
-                    <span className="home-fortune-detail__value">{fortune.career || '顺利'}</span>
-                  </div>
-                  <div className="home-fortune-detail">
-                    <span className="home-fortune-detail__label">💕 感情</span>
-                    <span className="home-fortune-detail__value">{fortune.love || '和谐'}</span>
-                  </div>
-                  <div className="home-fortune-detail">
-                    <span className="home-fortune-detail__label">🏃 健康</span>
-                    <span className="home-fortune-detail__value">{fortune.health || '良好'}</span>
-                  </div>
+                  <div className="home-fortune-summary">
+                    {fortune.content}
                 </div>
 
                 <div className="home-fortune-lucky">
                   <div className="home-fortune-lucky-item">
-                    <span className="home-fortune-lucky-item__label">幸运色</span>
-                    <span className="home-fortune-lucky-item__value">{fortune.lucky_color}</span>
+                      <div className="home-fortune-lucky-item__label">幸运色</div>
+                      <div className="home-fortune-lucky-item__value">{fortune.lucky_color || '-'}</div>
                   </div>
                   <div className="home-fortune-lucky-item">
-                    <span className="home-fortune-lucky-item__label">幸运数字</span>
-                    <span className="home-fortune-lucky-item__value">{fortune.lucky_number}</span>
+                      <div className="home-fortune-lucky-item__label">幸运数字</div>
+                      <div className="home-fortune-lucky-item__value">{fortune.lucky_number || '-'}</div>
                   </div>
                   <div className="home-fortune-lucky-item">
-                    <span className="home-fortune-lucky-item__label">幸运方位</span>
-                    <span className="home-fortune-lucky-item__value">{fortune.lucky_direction}</span>
+                      <div className="home-fortune-lucky-item__label">幸运方位</div>
+                      <div className="home-fortune-lucky-item__value">{fortune.lucky_direction || '-'}</div>
                   </div>
                   <div className="home-fortune-lucky-item">
-                    <span className="home-fortune-lucky-item__label">幸运时辰</span>
-                    <span className="home-fortune-lucky-item__value">{fortune.lucky_time}</span>
+                      <div className="home-fortune-lucky-item__label">幸运时辰</div>
+                      <div className="home-fortune-lucky-item__value">{fortune.lucky_time || '-'}</div>
                   </div>
                 </div>
 
-                {(fortune.yi?.length > 0 || fortune.ji?.length > 0) && (
+                  {(fortune.yi || fortune.ji) && (
                   <div className="home-fortune-advice">
-                    {fortune.yi?.length > 0 && (
+                      {fortune.yi && parseCommaSeparated(fortune.yi).length > 0 && (
                       <div className="home-fortune-advice__section home-fortune-advice__section--yi">
-                        <h4>宜</h4>
+                          <h4>✓ 宜</h4>
                         <ul>
-                          {fortune.yi.map((item, idx) => (
-                            <li key={idx}>{item}</li>
+                            {parseCommaSeparated(fortune.yi).map((item, index) => (
+                              <li key={index}>{item}</li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {fortune.ji?.length > 0 && (
+                      {fortune.ji && parseCommaSeparated(fortune.ji).length > 0 && (
                       <div className="home-fortune-advice__section home-fortune-advice__section--ji">
-                        <h4>忌</h4>
+                          <h4>✗ 忌</h4>
                         <ul>
-                          {fortune.ji.map((item, idx) => (
-                            <li key={idx}>{item}</li>
+                            {parseCommaSeparated(fortune.ji).map((item, index) => (
+                              <li key={index}>{item}</li>
                           ))}
                         </ul>
                       </div>
@@ -237,20 +176,22 @@ export default function HomePageDesktop() {
                   </div>
                 )}
               </div>
-            </section>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        {/* 右侧：统计 + 最近记录 */}
-        <aside className="home-sidebar">
-          {/* 统计卡片 */}
+        {/* 侧边栏 */}
+        <div className="home-sidebar">
+          {/* 统计数据 */}
           {isAuthenticated && (
-            <section className="desktop-card desktop-card--compact">
-              <h3 className="desktop-card__title">占卜统计</h3>
+            <Card>
+              <CardHeader title="占卜统计" />
+              <CardContent>
               <div className="home-stats">
                 <div className="home-stat">
                   <div className="home-stat__value">{stats.total}</div>
-                  <div className="home-stat__label">总次数</div>
+                    <div className="home-stat__label">总计</div>
                 </div>
                 <div className="home-stat">
                   <div className="home-stat__value">{stats.thisWeek}</div>
@@ -261,37 +202,34 @@ export default function HomePageDesktop() {
                   <div className="home-stat__label">本月</div>
                 </div>
               </div>
-            </section>
+              </CardContent>
+            </Card>
           )}
 
           {/* 最近占卜 */}
-          {isAuthenticated && recentDivinations.length > 0 && (
-            <section className="desktop-card desktop-card--compact">
-              <div className="desktop-card__header">
-                <h3 className="desktop-card__title">最近占卜</h3>
-                <button 
-                  className="desktop-btn desktop-btn--small"
-                  onClick={() => navigate('/history')}
-                >
+          {recentDivinations.length > 0 && (
+            <Card>
+              <CardHeader 
+                title="最近占卜" 
+                action={
+                  <Button variant="text" size="sm" onClick={() => navigate('/history')}>
                   查看全部
-                </button>
-              </div>
+                  </Button>
+                }
+              />
+              <CardContent>
               <div className="home-recent-list">
-                {recentDivinations.map((item) => (
+                  {recentDivinations.map((item: any) => (
                   <div 
-                    key={item.session_id}
+                      key={item.id} 
                     className="home-recent-item"
-                    onClick={() => navigate(`/history/${item.session_id}`)}
+                      onClick={() => navigate(`/history/${item.id}`)}
                   >
-                    <div className="home-recent-item__icon">
-                      {item.hexagram_info ? '🔮' : '🎴'}
-                    </div>
+                      <div className="home-recent-item__icon">🔮</div>
                     <div className="home-recent-item__content">
-                      <div className="home-recent-item__title">
-                        {item.title || '占卜记录'}
-                      </div>
+                        <div className="home-recent-item__title">{item.question}</div>
                       <div className="home-recent-item__time">
-                        {formatDate(item.created_at)}
+                          {new Date(item.created_at).toLocaleDateString('zh-CN')}
                       </div>
                     </div>
                     <div className="home-recent-item__badge">
@@ -300,35 +238,33 @@ export default function HomePageDesktop() {
                   </div>
                 ))}
               </div>
-            </section>
+              </CardContent>
+            </Card>
           )}
 
           {/* 未登录提示 */}
           {!isAuthenticated && (
-            <section className="desktop-card desktop-card--compact home-login-card">
+            <Card className="home-login-card">
+              <CardContent>
               <div className="home-login-card__icon">🔮</div>
               <h3 className="home-login-card__title">登录解锁更多功能</h3>
               <p className="home-login-card__desc">
                 查看每日运势、保存占卜历史、获取个性化推荐
               </p>
-              <button 
-                className="desktop-btn desktop-btn--primary"
-                onClick={() => setShowLoginModal(true)}
-              >
+                <Button variant="primary" fullWidth onClick={() => setShowLoginModal(true)}>
                 立即登录
-              </button>
-              <button 
-                className="desktop-btn desktop-btn--secondary"
-                style={{ marginTop: '12px' }}
-                onClick={() => navigate('/register')}
-              >
-                注册账号
-              </button>
-            </section>
+                </Button>
+              </CardContent>
+            </Card>
           )}
-        </aside>
+        </div>
       </div>
+
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
     </div>
   );
 }
-

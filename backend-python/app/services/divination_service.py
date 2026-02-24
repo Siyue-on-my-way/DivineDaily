@@ -24,10 +24,13 @@ class DivinationService:
     在 API 路由中应该使用 EnhancedDivinationService。
     """
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, llm_service=None, prompt_repo=None, llm_repo=None):
         self.db = db
+        self.llm_service = llm_service
+        self.prompt_repo = prompt_repo
+        self.llm_repo = llm_repo
         self.iching_service = IChingService()
-        self.tarot_service = TarotService()
+        self.tarot_service = TarotService(llm_service=llm_service, prompt_repo=prompt_repo, llm_repo=llm_repo)
     
     async def start_divination(self, request: CreateDivinationRequest) -> DivinationResult:
         """开始占卜（基础版本，无 LLM 增强）"""
@@ -82,9 +85,9 @@ class DivinationService:
         return result
     
     async def _process_tarot(self, session_id: str, request: CreateDivinationRequest) -> Dict[str, Any]:
-        """处理塔罗占卜"""
+        """处理塔罗占卜（支持LLM增强）"""
         spread = request.spread or "single"
-        result = self.tarot_service.generate_result(session_id, request.question, spread)
+        result = await self.tarot_service.generate_result(session_id, request.question, spread)
         return result
     
     async def get_result(self, session_id: str) -> Optional[DivinationResult]:

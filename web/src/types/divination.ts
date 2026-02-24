@@ -42,27 +42,22 @@ export interface RecommendationItem {
 }
 
 export interface DailyFortuneInfo {
-  id: number;
-  user_id: string;
-  date: string;
-  score: number;
-  summary: string;
-  
-  // 详细建议
-  wealth: string;
-  career: string;
-  love: string;
-  health: string;
+  overall_score: number;
+  wealth_score: number;
+  career_score: number;
+  love_score: number;
+  health_score: number;
+  content: string;
   
   // 幸运指南
   lucky_color: string;
-  lucky_number: string;
+  lucky_number: number;
   lucky_direction: string;
   lucky_time: string;
   
-  // 宜忌
-  yi: string[];
-  ji: string[];
+  // 宜忌（逗号分隔的字符串）
+  yi: string;
+  ji: string;
   
   // 节气/节日
   solar_term: string;

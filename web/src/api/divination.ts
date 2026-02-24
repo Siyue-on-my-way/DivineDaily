@@ -7,6 +7,14 @@ export interface DivinationHistoryParams {
   user_id?: string;
 }
 
+export interface DivinationHistoryResponse {
+  sessions: DivinationSession[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 export interface DivinationStatsResponse {
   total_count: number;
   saved_count: number;
@@ -16,8 +24,8 @@ export interface DivinationStatsResponse {
 // 占卜 API
 export const divinationApi = {
   // 获取占卜历史记录
-  getHistory: async (params?: DivinationHistoryParams): Promise<DivinationResult[]> => {
-    const response = await axiosInstance.get<DivinationResult[]>('/divinations/history', {
+  getHistory: async (params?: DivinationHistoryParams): Promise<DivinationHistoryResponse> => {
+    const response = await axiosInstance.get<DivinationHistoryResponse>('/divinations/history', {
       params,
     });
     return response.data;

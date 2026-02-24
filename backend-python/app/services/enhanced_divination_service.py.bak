@@ -19,19 +19,19 @@ class EnhancedDivinationService(DivinationService):
     """增强占卜服务（支持智能预处理、路由和LLM）"""
     
     def __init__(self, db: AsyncSession, llm_service: Optional[LLMService] = None):
-        # 初始化仓库
-        self.llm_repo = LLMRepository(db)
-        self.prompt_repo = PromptConfigRepository(db)
-        
-        # 调用父类初始化,传递LLM相关参数
-        super().__init__(db, llm_service=llm_service, prompt_repo=self.prompt_repo, llm_repo=self.llm_repo)
-        
+        super().__init__(db)
         self.llm_service = llm_service
         self.intent_service = IntentRecognitionService(db, llm_service)
         self.question_analyzer = QuestionAnalyzer(llm_service)
-        self.router = DivinationRouter(db)
-        self.daily_fortune_service = None
+        self.router = DivinationRouter(db)  # 新增：智能路由器
+        self.llm_repo = LLMRepository(db)
+        self.prompt_repo = PromptConfigRepository(db)
+        self.daily_fortune_service = None  # 将在外部注入
         print(f"[DEBUG] EnhancedDivinationService初始化，llm_service={'有' if llm_service else '无'}")
+    
+    def set_daily_fortune_service(self, service):
+        """注入每日运势服务"""
+        self.daily_fortune_service = service
     
     async def start_divination_with_enhancement(self, request) -> Dict[str, Any]:
         """开始增强占卜（集成智能预处理和路由）"""

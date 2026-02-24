@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Logout API failed', error);
     } finally {
       clearAuth();
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
   };
 

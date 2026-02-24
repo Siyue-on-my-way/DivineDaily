@@ -14,7 +14,7 @@ export default function LoginPage() {
   // 如果已登录，重定向到首页
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/admin');
     }
   }, [isAuthenticated, navigate]);
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
-      navigate('/');
+      navigate('/admin');
     } catch (err: any) {
       setError(err.message || '登录失败，请检查用户名和密码');
     } finally {

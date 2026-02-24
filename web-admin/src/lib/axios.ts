@@ -57,7 +57,7 @@ axiosInstance.interceptors.response.use(
       
       // 跳转到登录页
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+        window.location.href = '/admin/login';
       }
       
       return Promise.reject(error);

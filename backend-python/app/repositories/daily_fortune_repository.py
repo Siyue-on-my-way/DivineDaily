@@ -33,26 +33,38 @@ class DailyFortuneRepository:
         user_id: int,
         fortune_date: date,
         overall_score: int,
-        love_score: int,
-        career_score: int,
         wealth_score: int,
+        career_score: int,
+        love_score: int,
         health_score: int,
         lucky_color: str,
         lucky_number: int,
-        content: str
+        lucky_direction: str,
+        lucky_time: str,
+        content: str,
+        yi: str = '',
+        ji: str = '',
+        solar_term: str = '',
+        festival: str = ''
     ) -> DailyFortune:
         """创建运势记录"""
         fortune = DailyFortune(
             user_id=user_id,
             fortune_date=fortune_date,
             overall_score=overall_score,
-            love_score=love_score,
-            career_score=career_score,
             wealth_score=wealth_score,
+            career_score=career_score,
+            love_score=love_score,
             health_score=health_score,
             lucky_color=lucky_color,
             lucky_number=lucky_number,
-            content=content
+            lucky_direction=lucky_direction,
+            lucky_time=lucky_time,
+            content=content,
+            yi=yi,
+            ji=ji,
+            solar_term=solar_term,
+            festival=festival
         )
         self.db.add(fortune)
         await self.db.commit()

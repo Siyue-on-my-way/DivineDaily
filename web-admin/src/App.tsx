@@ -15,7 +15,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { isAuthenticated } = useAuth();
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
   
   return <>{children}</>;
@@ -28,10 +28,10 @@ function App() {
         <Router>
           <Routes>
             {/* 登录页面 */}
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin/login" element={<LoginPage />} />
             
             {/* 管理后台路由 - 需要认证 */}
-            <Route path="/" element={
+            <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminLayout />
               </ProtectedRoute>
@@ -43,7 +43,7 @@ function App() {
             </Route>
             
             {/* 404 重定向 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
           <ToastContainer />
         </Router>
