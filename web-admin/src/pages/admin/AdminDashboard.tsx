@@ -19,11 +19,11 @@ export default function AdminDashboard() {
     },
     {
       title: '用户管理',
-      description: '管理用户账号、权限等（即将推出）',
+      description: '管理用户账号、权限、状态等',
       icon: '👥',
-      link: '#',
+      link: '/admin/users',
       color: '#FF9800',
-      disabled: true,
+      disabled: false,
     },
     {
       title: '系统设置',

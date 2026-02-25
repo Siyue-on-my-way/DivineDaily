@@ -11,7 +11,8 @@ export default function AdminSidebar({ isOpen, onClose, isMobile }: AdminSidebar
   const menuItems = [
     { path: '/admin', label: '管理首页', icon: '🏠', exact: true },
     { path: '/admin/llm-config', label: 'LLM 配置', icon: '🤖' },
-    { path: '/admin/assistant-config', label: 'Assistant 配置', icon: '📝' },
+    { path: '/admin/prompt-config', label: 'Assistant 配置', icon: '📝' },
+    { path: '/admin/users', label: '用户管理', icon: '👥' },
   ];
 
   const handleNavClick = () => {

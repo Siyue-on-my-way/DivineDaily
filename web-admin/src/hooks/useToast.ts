@@ -25,3 +25,23 @@ export const toast = {
     }));
   },
 };
+
+/**
+ * useToast Hook
+ * 提供 toast 通知功能
+ */
+export const useToast = () => {
+  const showToast = (message: string, type: ToastType = 'info', duration?: number) => {
+    window.dispatchEvent(new CustomEvent(`toast:${type}`, {
+      detail: { message, duration }
+    }));
+  };
+
+  return {
+    showToast,
+    success: (message: string, duration?: number) => toast.success(message, duration),
+    error: (message: string, duration?: number) => toast.error(message, duration),
+    warning: (message: string, duration?: number) => toast.warning(message, duration),
+    info: (message: string, duration?: number) => toast.info(message, duration),
+  };
+};

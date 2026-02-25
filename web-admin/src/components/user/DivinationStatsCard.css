@@ -1,0 +1,107 @@
+.divination-stats-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.divination-stats-card .card-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.divination-stats-card .card-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.divination-stats-card .card-body {
+  padding: 24px;
+}
+
+.divination-stats-card .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.divination-stats-card .stat-item {
+  text-align: center;
+  padding: 24px;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+
+.divination-stats-card .stat-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.divination-stats-card .stat-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.divination-stats-card .stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.divination-stats-card .stat-value {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+}
+
+.divination-stats-card .stat-item:nth-child(1) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.divination-stats-card .stat-item:nth-child(1) .stat-label,
+.divination-stats-card .stat-item:nth-child(1) .stat-value {
+  color: #fff;
+}
+
+.divination-stats-card .stat-item:nth-child(2) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.divination-stats-card .stat-item:nth-child(2) .stat-label,
+.divination-stats-card .stat-item:nth-child(2) .stat-value {
+  color: #fff;
+}
+
+.divination-stats-card .stat-item:nth-child(3) {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.divination-stats-card .stat-item:nth-child(3) .stat-label,
+.divination-stats-card .stat-item:nth-child(3) .stat-value {
+  color: #fff;
+}
+
+.divination-stats-card .stat-item:nth-child(4) {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.divination-stats-card .stat-item:nth-child(4) .stat-label,
+.divination-stats-card .stat-item:nth-child(4) .stat-value {
+  color: #fff;
+}
+
+@media (max-width: 1024px) {
+  .divination-stats-card .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .divination-stats-card .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -7,6 +7,8 @@ import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LLMConfigPage from './pages/admin/LLMConfigPage';
 import PromptConfigPage from './pages/admin/PromptConfigPage';
+import UserManagement from './pages/admin/UserManagement';
+import UserDetailPage from './pages/admin/UserDetailPage';
 import ConfigManagement from './pages/ConfigManagement';
 import './App.css';
 
@@ -39,6 +41,8 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="llm-config" element={<LLMConfigPage />} />
               <Route path="prompt-config" element={<PromptConfigPage />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="users/:userId" element={<UserDetailPage />} />
               <Route path="config" element={<ConfigManagement />} />
             </Route>
             

@@ -1,0 +1,128 @@
+.user-info-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.user-info-card .card-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-info-card .card-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.user-info-card .card-body {
+  padding: 24px;
+  display: flex;
+  gap: 32px;
+}
+
+.user-info-card .user-avatar-section {
+  flex-shrink: 0;
+}
+
+.user-info-card .avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info-card .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info-card .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.user-info-card .user-info-section {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.user-info-card .info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info-card .info-row label {
+  font-weight: 500;
+  color: #666;
+  min-width: 80px;
+}
+
+.user-info-card .info-row span {
+  color: #333;
+}
+
+.user-info-card .role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.user-info-card .role-badge.admin {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.user-info-card .role-badge.normal {
+  background: #f0f5ff;
+  color: #1890ff;
+}
+
+.user-info-card .status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.user-info-card .status-badge.active {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.user-info-card .status-badge.inactive {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+@media (max-width: 768px) {
+  .user-info-card .card-body {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .user-info-card .user-info-section {
+    grid-template-columns: 1fr;
+  }
+}
+
