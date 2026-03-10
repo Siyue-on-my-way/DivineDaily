@@ -5,6 +5,9 @@ import hashlib
 from typing import Optional, Any
 from datetime import timedelta
 import redis.asyncio as redis
+from app.core.logger import get_logger
+
+logger = get_logger("cache")
 
 
 class RedisCache:
@@ -54,7 +57,7 @@ class RedisCache:
                 return json.loads(value)
             return None
         except Exception as e:
-            print(f"[Redis] 获取缓存失败: {e}")
+            logger.error("获取缓存失败", exc_info=True)
             return None
     
     async def set(
@@ -85,7 +88,7 @@ class RedisCache:
                 await self.client.set(key, json_value)
             return True
         except Exception as e:
-            print(f"[Redis] 设置缓存失败: {e}")
+            logger.error("设置缓存失败", exc_info=True)
             return False
     
     async def delete(self, key: str) -> bool:
@@ -105,7 +108,7 @@ class RedisCache:
             await self.client.delete(key)
             return True
         except Exception as e:
-            print(f"[Redis] 删除缓存失败: {e}")
+            logger.error("删除缓存失败", exc_info=True)
             return False
     
     async def exists(self, key: str) -> bool:
@@ -124,7 +127,7 @@ class RedisCache:
         try:
             return await self.client.exists(key) > 0
         except Exception as e:
-            print(f"[Redis] 检查缓存失败: {e}")
+            logger.error("检查缓存失败", exc_info=True)
             return False
     
     async def expire(self, key: str, seconds: int) -> bool:
@@ -145,7 +148,7 @@ class RedisCache:
             await self.client.expire(key, seconds)
             return True
         except Exception as e:
-            print(f"[Redis] 设置过期时间失败: {e}")
+            logger.error("设置过期时间失败", exc_info=True)
             return False
     
     async def ttl(self, key: str) -> int:
@@ -164,7 +167,7 @@ class RedisCache:
         try:
             return await self.client.ttl(key)
         except Exception as e:
-            print(f"[Redis] 获取TTL失败: {e}")
+            logger.error("获取TTL失败", exc_info=True)
             return -2
     
     async def clear_pattern(self, pattern: str) -> int:
@@ -190,7 +193,7 @@ class RedisCache:
             
             return len(keys)
         except Exception as e:
-            print(f"[Redis] 清除缓存失败: {e}")
+            logger.error("清除缓存失败", exc_info=True)
             return 0
     
     @staticmethod
@@ -252,11 +255,11 @@ class CacheManager:
         # 尝试从缓存获取
         cached_value = await self.redis.get(key)
         if cached_value is not None:
-            print(f"[Cache] 命中缓存: {key}")
+            logger.debug("缓存命中", extra={"key": key})
             return cached_value
         
         # 缓存未命中，调用函数获取数据
-        print(f"[Cache] 未命中缓存: {key}")
+        logger.debug("缓存未命中", extra={"key": key})
         
         # 判断是否为async函数
         import asyncio
@@ -278,7 +281,7 @@ class CacheManager:
             key: 缓存键
         """
         await self.redis.delete(key)
-        print(f"[Cache] 缓存失效: {key}")
+        logger.debug("缓存失效", extra={"key": key})
     
     async def invalidate_pattern(self, pattern: str):
         """
@@ -288,7 +291,7 @@ class CacheManager:
             pattern: 匹配模式
         """
         count = await self.redis.clear_pattern(pattern)
-        print(f"[Cache] 批量缓存失效: {pattern}, 删除{count}个键")
+        logger.info("批量缓存失效", extra={"pattern": pattern, "count": count})
 
 
 # 全局缓存实例

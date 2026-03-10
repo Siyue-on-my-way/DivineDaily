@@ -15,6 +15,10 @@ from app.services.llm_service import create_llm_service
 from app.services.time_convert_service import TimeConvertService
 from app.services.fortune_algorithm_service import FortuneAlgorithmService
 
+from app.core.logger import get_logger
+logger = get_logger("fortune")
+
+
 
 class DailyFortuneService:
     """每日运势服务 - 集成传统算法"""
@@ -132,7 +136,7 @@ class DailyFortuneService:
             return self._generate_default_content(algorithm_data)
             
         except Exception as e:
-            print(f"[ERROR] LLM 生成失败: {type(e).__name__}: {e}")
+            logger.error(f"LLM 生成失败: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
             return self._generate_default_content(algorithm_data)
@@ -292,7 +296,7 @@ class DailyFortuneService:
             
             return "\n".join(content_parts)
         except Exception as e:
-            print(f"[WARN] JSON 解析失败: {e}, 使用原始响应")
+            logger.warning(f"JSON 解析失败: {e}, 使用原始响应")
             return response[:500] if response else self._generate_default_content(algorithm_data)
     
     def _generate_default_content(self, algorithm_data: Dict[str, Any]) -> str:

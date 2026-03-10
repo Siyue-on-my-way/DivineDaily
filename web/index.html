@@ -1,15 +1,44 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="description" content="Divine Daily - 结合传统玄学与现代 AI 技术的智能占卜应用" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- iOS Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Divine Daily" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    
+    <title>Divine Daily - 智能占卜</title>
+    
     <!-- 加载 calendar.js 到全局作用域 -->
     <script src="/src/utils/calendar.js"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- PWA Service Worker 注册 -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('✓ Service Worker 注册成功:', registration.scope);
+            })
+            .catch(error => {
+              console.log('✗ Service Worker 注册失败:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

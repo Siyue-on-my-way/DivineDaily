@@ -103,6 +103,19 @@ Content-Type: application/json
 - `version`: 版本（CN=周易, TAROT=塔罗）
 - `event_type`: 事件类型（decision/career/relationship/fortune/knowledge）
 - `spread`: 牌阵类型（single/three/cross，仅塔罗）
+- `context`: 扩展上下文（可选）
+  - 塔罗推荐传递 `context.tarot_interaction`
+  - 示例：
+    ```json
+    {
+      "tarot_interaction": {
+        "spread": "three",
+        "cut_position": 63,
+        "shuffle_trace": [45, 52, 61, 63, 58]
+      }
+    }
+    ```
+  - 用途：让用户“洗牌/切牌”交互参与随机种子计算，使抽牌结果更具参与感且可复现
 
 **响应**:
 ```json
@@ -453,14 +466,15 @@ Content-Type: application/json
 ```typescript
 interface DivinationResult {
   session_id: string;
-  outcome?: string;           // 吉凶判断
-  title?: string;             // 卦名或标题
-  summary: string;            // 摘要
-  detail: string;             // 详细解读
-  hexagram_info?: HexagramInfo;  // 卦象信息（周易）
-  cards?: TarotCard[];        // 牌面信息（塔罗）
-  recommendations?: string[]; // 建议
-  daily_fortune?: DailyFortuneInfo;  // 每日运势
+  outcome?: string;                 // 吉凶判断
+  title?: string;                   // 卦名或标题
+  summary: string;                  // 摘要
+  detail: string;                   // 详细解读
+  hexagram_info?: HexagramInfo;     // 卦象信息（周易）
+  cards?: TarotCard[];              // 牌面信息（塔罗）
+  recommendations?: string[];       // 建议
+  daily_fortune?: DailyFortuneInfo; // 每日运势
+  yarrow_trace?: YarrowProcessTrace;// 大衍筮法起卦过程（仅周易）
   needs_follow_up: boolean;
   created_at: string;
 }
@@ -475,10 +489,45 @@ interface HexagramInfo {
   upper_trigram: string;      // 上卦
   lower_trigram: string;      // 下卦
   wuxing: string;             // 五行
-  changing_lines: number[];   // 变爻位置
+  changing_lines: number[];   // 变爻位置（0-5，自下而上）
+  line_values?: number[];     // 六爻值（自下而上，6/7/8/9）
   outcome: string;            // 吉凶
   summary: string;            // 卦辞
   detail: string;             // 详细解释
+}
+```
+
+### YarrowProcessTrace（大衍筮法起卦过程）
+
+```typescript
+interface YarrowChangeStep {
+  step_index: number;              // 第几变（1-3）
+  stalks_before: number;           // 本变开始前蓍草数
+  left_pile: number;               // 左手蓍草数
+  right_pile_before_hang: number;  // 右手蓍草数（挂一前）
+  right_hang_one: number;          // 挂一数量，固定为1
+  right_pile_after_hang: number;   // 右手蓍草数（挂一后）
+  left_remainder: number;          // 左手取四余数（0按4计）
+  right_remainder: number;         // 右手取四余数（0按4计）
+  removed: number;                 // 本次去除总数
+  stalks_after: number;            // 本变结束后蓍草数
+}
+
+interface YarrowLineTrace {
+  line_index: number;              // 爻位（1-6，自下而上）
+  initial_stalks: number;          // 初始蓍草数（通常49）
+  changes: YarrowChangeStep[];     // 三变过程
+  final_stalks: number;            // 三变后剩余蓍草数
+  line_value: number;              // 爻值（6/7/8/9）
+  line_type: string;               // 爻类型（老阴/少阳/少阴/老阳）
+  is_changing: boolean;            // 是否变爻
+}
+
+interface YarrowProcessTrace {
+  method: string;                  // 起卦方法，固定为 "dayan_yarrow"
+  total_stalks: number;            // 总蓍草数（50）
+  effective_stalks: number;        // 参与演算蓍草数（49）
+  lines: YarrowLineTrace[];        // 六爻过程（自下而上）
 }
 ```
 

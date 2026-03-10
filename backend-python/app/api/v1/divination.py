@@ -1,4 +1,4 @@
-"""占卜相关路由 - 增强版"""
+"""占卜相关路由 - 同步模式"""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,10 +12,13 @@ from app.services.enhanced_divination_service import EnhancedDivinationService
 from app.services.llm_service import create_llm_service
 from app.repositories.llm_repository import LLMRepository
 from app.repositories.divination_repository import DivinationRepository
+from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.logger import get_logger
 from datetime import datetime
 from typing import Optional
 
 router = APIRouter()
+logger = get_logger("api")
 
 
 @router.post("/start", response_model=DivinationResult)
@@ -24,7 +27,16 @@ async def start_divination(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """开始占卜（使用增强服务，集成 LLM 智能分析）"""
+    """
+    开始占卜（同步模式）
+    
+    前端发起请求后，后端完整执行占卜流程（包括 LLM 增强），
+    然后返回完整结果。前端在此期间保持等待状态。
+    
+    预计响应时间：
+    - 基础占卜：< 1 秒
+    - 带 LLM 增强：10-40 秒
+    """
     # 确保 user_id 与当前登录用户一致
     request.user_id = str(current_user.id)
     
@@ -37,26 +49,30 @@ async def start_divination(
         if llm_config and llm_config.is_enabled:
             try:
                 llm_service = create_llm_service(llm_config)
-                print(f"[INFO] 使用 LLM: {llm_config.name}")
+                logger.info("使用 LLM", extra={"llm_name": llm_config.name})
             except Exception as e:
-                print(f"[WARN] 创建 LLM 服务失败: {e}")
+                logger.warning("创建 LLM 服务失败", exc_info=True)
                 # 降级：不使用 LLM
         else:
-            print(f"[WARN] 未配置可用的 LLM，将使用基础占卜服务")
+            logger.warning("未配置可用的 LLM，将使用基础占卜服务")
         
-        # 使用增强占卜服务
+        # 使用增强占卜服务（同步执行，等待完成）
         service = EnhancedDivinationService(db, llm_service)
         result = await service.start_divination_with_enhancement(request)
+        
+        # 提交数据库事务
         await db.commit()
         
         # 关闭 LLM 连接
         if llm_service and hasattr(llm_service, 'close'):
             await llm_service.close()
         
+        # 返回完整结果
         return result
+        
     except Exception as e:
         await db.rollback()
-        print(f"[ERROR] 占卜失败: {type(e).__name__}: {e}")
+        logger.error("占卜失败", exc_info=True)
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"占卜失败: {str(e)}")
@@ -244,5 +260,8 @@ async def get_divination_result(
             await llm_service.close()
         
         return result
+    except (BadRequestError, NotFoundError):
+        # 直接重新抛出 HTTP 异常，保持原有状态码
+        raise
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"未找到占卜结果: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取占卜结果失败: {str(e)}")

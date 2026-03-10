@@ -1,9 +1,13 @@
 """智能占卜路由器"""
 
 from typing import Dict, Any, Optional
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.question_analyzer import QuestionAnalysis
 from app.schemas.divination import DivinationResult
+from app.core.logger import get_logger
+
+logger = get_logger("divination.router")
 
 
 class DivinationRouter:
@@ -35,7 +39,11 @@ class DivinationRouter:
         Returns:
             DivinationResult: 占卜结果
         """
-        print(f"[路由] 问题类型: {analysis.question_type}, 子类型: {analysis.sub_type}, 复杂度: {analysis.complexity}")
+        logger.info(
+            f"路由问题 | session_id={session_id} | user_id={user_id} | "
+            f"type={analysis.question_type} | sub_type={analysis.sub_type} | "
+            f"complexity={analysis.complexity}"
+        )
         
         # 构建上下文
         question_context = {
@@ -51,7 +59,7 @@ class DivinationRouter:
         # 根据问题类型路由
         if analysis.question_type == "fortune":
             # 运势类问题 → 每日运势服务
-            print(f"[路由] 路由到: 每日运势服务")
+            logger.info(f"路由到每日运势服务 | session_id={session_id}")
             return await self._process_fortune(
                 session_id, 
                 user_id, 
@@ -61,7 +69,7 @@ class DivinationRouter:
         
         elif analysis.question_type == "knowledge":
             # 知识类问题 → 知识解读（卦象+知识传授）
-            print(f"[路由] 路由到: 知识解读服务")
+            logger.info(f"路由到知识解读服务 | session_id={session_id}")
             return await self._process_knowledge(
                 session_id,
                 question,
@@ -73,7 +81,7 @@ class DivinationRouter:
         
         else:
             # 决策类/感情类/事业类 → 周易卦象占卜
-            print(f"[路由] 路由到: 决策占卜服务（周易卦象）")
+            logger.info(f"路由到决策占卜服务（周易卦象） | session_id={session_id}")
             return await self._process_decision(
                 session_id,
                 question,
@@ -124,9 +132,14 @@ class DivinationRouter:
                 )
                 result.question_type = "fortune"
                 result.question_intent = "fortune_inquiry"
+                logger.info(f"每日运势服务成功 | session_id={session_id} | score={fortune.score}")
                 return result
             except Exception as e:
-                print(f"[路由] 每日运势服务失败，降级到推荐服务: {e}")
+                logger.error(
+                    f"[降级] 每日运势服务失败，降级到推荐服务 | "
+                    f"session_id={session_id} | user_id={user_id} | error={str(e)}",
+                    exc_info=True
+                )
         
         # 降级：使用推荐服务
         return await self._process_recommendation(session_id, user_id, divination_service)
@@ -199,6 +212,10 @@ class DivinationRouter:
         divination_service
     ) -> DivinationResult:
         """处理推荐类问题（降级方案）"""
+        logger.warning(
+            f"[降级] 触发推荐服务降级方案 | session_id={session_id} | user_id={user_id}"
+        )
+        
         # 简单的推荐逻辑
         result = DivinationResult(
             session_id=session_id,
@@ -208,7 +225,8 @@ class DivinationRouter:
             detail="# 推荐建议\n\n1. 保持开放心态\n2. 关注当下\n3. 相信直觉\n\n具体建议会根据您的个人档案和当前运势生成。",
             hexagram_info=None,
             recommendations=[],
-            needs_follow_up=False
+            needs_follow_up=False,
+            created_at=datetime.now(timezone.utc)
         )
         result.question_type = "recommendation"
         result.question_intent = "guidance"
@@ -235,4 +253,3 @@ class DivinationRouter:
             "**忌**：" + "、".join(fortune.ji)
         ]
         return "\n".join(lines)
-

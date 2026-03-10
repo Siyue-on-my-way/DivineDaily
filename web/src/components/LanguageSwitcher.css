@@ -1,0 +1,121 @@
+.language-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.language-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.language-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.language-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.language-label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.language-arrow {
+  font-size: 10px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.language-switcher:hover .language-arrow {
+  transform: rotate(180deg);
+}
+
+.language-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 150px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s;
+  z-index: 1000;
+}
+
+.language-switcher:hover .language-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.language-option:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.language-option:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.language-option:hover {
+  background: #f9fafb;
+}
+
+.language-option.active {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.language-option .language-label {
+  flex: 1;
+}
+
+.language-check {
+  color: #2563eb;
+  font-weight: bold;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .language-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .language-flag {
+    font-size: 16px;
+  }
+  
+  .language-dropdown {
+    right: auto;
+    left: 0;
+  }
+}

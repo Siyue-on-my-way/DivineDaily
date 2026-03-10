@@ -15,6 +15,10 @@ from app.models.user import User, UserRole
 from app.models.llm_config import LLMConfig
 from app.models.prompt_config import PromptConfig
 
+from app.core.logger import get_logger
+logger = get_logger("api.admin")
+
+
 router = APIRouter()
 
 
@@ -442,7 +446,7 @@ def load_test_cases() -> Dict[str, Any]:
         with open(test_case_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f"加载测试用例失败: {e}")
+        logger.info(f"加载测试用例失败: {e}")
         return {}
 
 

@@ -222,10 +222,17 @@ export const getUserStats = async (): Promise<UserStats> => {
 export const getUserDivinations = async (
   userId: number,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
+  filterType?: string,
+  search?: string
 ): Promise<{ divinations: UserDivination[]; total: number }> => {
   const response = await axios.get(`/admin/users/${userId}/divinations`, {
-    params: { page, page_size: pageSize }
+    params: { 
+      page, 
+      page_size: pageSize,
+      filter_type: filterType,
+      search: search
+    }
   });
   return response.data;
 };

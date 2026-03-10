@@ -1,6 +1,8 @@
 """认证服务"""
+from app.core.logger import get_logger
+logger = get_logger("auth")
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User, UserRole
@@ -68,7 +70,7 @@ class AuthService:
             raise AuthenticationError(detail="账号已被禁用")
         
         # 更新最后登录时间
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         await self.user_repo.update(user)
         
         # 生成令牌
@@ -156,4 +158,4 @@ class AuthService:
         )
         
         await self.user_repo.create(admin)
-        print(f"✅ 管理员账号已创建: {settings.ADMIN_USERNAME}")
+        logger.info("管理员账号已创建", extra={"username": settings.ADMIN_USERNAME})

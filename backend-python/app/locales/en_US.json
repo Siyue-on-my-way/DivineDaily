@@ -1,0 +1,113 @@
+{
+  "app_name": "Divine Daily",
+  "app_description": "Intelligent Divination App",
+  
+  "common": {
+    "success": "Success",
+    "error": "Error",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh"
+  },
+  
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "phone": "Phone",
+    "login_success": "Login successful",
+    "logout_success": "Logout successful",
+    "register_success": "Registration successful",
+    "invalid_credentials": "Invalid username or password",
+    "account_disabled": "Account has been disabled",
+    "token_expired": "Session expired, please login again",
+    "token_invalid": "Invalid token"
+  },
+  
+  "divination": {
+    "title": "Divination",
+    "start": "Start Divination",
+    "question": "Enter your question",
+    "question_placeholder": "e.g., Should I change my job?",
+    "processing": "Divining...",
+    "result": "Divination Result",
+    "outcome_good": "Auspicious",
+    "outcome_bad": "Inauspicious",
+    "outcome_neutral": "Neutral",
+    "hexagram": "Hexagram",
+    "summary": "Summary",
+    "detail": "Details",
+    "recommendations": "Recommendations",
+    "history": "History",
+    "session_not_found": "Divination session not found",
+    "session_not_completed": "Divination not completed yet",
+    "divination_failed": "Divination failed",
+    "question_required": "Please enter a question",
+    "question_too_short": "Question is too short, please provide more details",
+    "question_too_long": "Question is too long, please simplify"
+  },
+  
+  "fortune": {
+    "title": "Daily Fortune",
+    "today": "Today's Fortune",
+    "score": "Overall Score",
+    "wealth": "Wealth",
+    "career": "Career",
+    "love": "Love",
+    "health": "Health",
+    "lucky_color": "Lucky Color",
+    "lucky_number": "Lucky Number",
+    "lucky_direction": "Lucky Direction",
+    "lucky_time": "Lucky Time",
+    "yi": "Do",
+    "ji": "Don't",
+    "not_found": "Fortune not generated"
+  },
+  
+  "error": {
+    "internal_server_error": "Internal server error",
+    "bad_request": "Bad request",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Forbidden",
+    "not_found": "Resource not found",
+    "method_not_allowed": "Method not allowed",
+    "conflict": "Resource conflict",
+    "validation_error": "Validation failed",
+    "database_error": "Database error",
+    "network_error": "Network error",
+    "timeout": "Request timeout",
+    "unknown_error": "Unknown error"
+  },
+  
+  "validation": {
+    "required": "{field} is required",
+    "invalid_format": "{field} format is invalid",
+    "too_short": "{field} is too short",
+    "too_long": "{field} is too long",
+    "invalid_email": "Invalid email format",
+    "invalid_phone": "Invalid phone format",
+    "password_too_weak": "Password is too weak"
+  },
+  
+  "message": {
+    "operation_success": "Operation successful",
+    "operation_failed": "Operation failed",
+    "data_saved": "Data saved",
+    "data_deleted": "Data deleted",
+    "no_data": "No data available",
+    "loading_failed": "Loading failed",
+    "network_unavailable": "Network unavailable"
+  }
+}

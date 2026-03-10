@@ -236,17 +236,48 @@ async def get_user_divinations(
     user_id: int,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    filter_type: Optional[str] = Query(None, description="筛选类型：all/iching/tarot/fortune"),
+    search: Optional[str] = Query(None, description="搜索关键词"),
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """获取用户占卜历史"""
+    """获取用户占卜历史（支持筛选和搜索）"""
     from app.models.divination import DivinationSession
-    from sqlalchemy import select, func, desc
+    from sqlalchemy import select, func, desc, or_
     
-    # 查询占卜历史
+    # 构建基础查询
     query = select(DivinationSession).where(
         DivinationSession.user_id == str(user_id)
-    ).order_by(desc(DivinationSession.created_at))
+    )
+    
+    # 应用筛选
+    if filter_type and filter_type != 'all':
+        if filter_type == 'iching':
+            query = query.where(DivinationSession.version == 'CN')
+        elif filter_type == 'tarot':
+            query = query.where(DivinationSession.version == 'TAROT')
+        elif filter_type == 'fortune':
+            # 运势类型可能有多种表示方式
+            query = query.where(
+                or_(
+                    DivinationSession.version == 'FORTUNE',
+                    DivinationSession.version.like('%fortune%'),
+                    DivinationSession.event_type == 'daily_fortune'
+                )
+            )
+    
+    # 应用搜索
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.where(
+            or_(
+                DivinationSession.question.like(search_pattern),
+                DivinationSession.result_summary.like(search_pattern)
+            )
+        )
+    
+    # 排序
+    query = query.order_by(desc(DivinationSession.created_at))
     
     # 获取总数
     count_query = select(func.count()).select_from(query.subquery())

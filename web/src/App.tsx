@@ -10,8 +10,10 @@ import TarotPage from './pages/TarotPage';
 import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import HistoryDetailPage from './pages/HistoryDetailPage';
+import InsightsPage from './pages/InsightsPage';
 import AboutPage from './pages/AboutPage';
 import RegisterPage from './pages/RegisterPage';
+import SharePage from './pages/SharePage';
 import './App.css';
 
 function App() {
@@ -28,7 +30,11 @@ function App() {
             <Route path="/profile" element={<ResponsiveLayout><ProfilePage /></ResponsiveLayout>} />
             <Route path="/history" element={<ResponsiveLayout><HistoryPage /></ResponsiveLayout>} />
             <Route path="/history/:id" element={<ResponsiveLayout><HistoryDetailPage /></ResponsiveLayout>} />
+            <Route path="/insights" element={<ResponsiveLayout><InsightsPage /></ResponsiveLayout>} />
             <Route path="/about" element={<ResponsiveLayout><AboutPage /></ResponsiveLayout>} />
+            
+            {/* 分享页面（无需布局） */}
+            <Route path="/share/:shareToken" element={<SharePage />} />
             
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,0 +1,124 @@
+{
+  "app": {
+    "name": "Divine Daily",
+    "description": "智能占卜应用"
+  },
+  "common": {
+    "success": "成功",
+    "error": "错误",
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "submit": "提交",
+    "search": "搜索",
+    "refresh": "刷新",
+    "close": "关闭"
+  },
+  "nav": {
+    "home": "首页",
+    "divination": "占卜",
+    "tarot": "塔罗",
+    "fortune": "运势",
+    "history": "历史",
+    "profile": "我的",
+    "about": "关于",
+    "insights": "洞察"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "register": "注册",
+    "username": "用户名",
+    "password": "密码",
+    "email": "邮箱",
+    "phone": "手机号",
+    "loginSuccess": "登录成功",
+    "logoutSuccess": "退出成功",
+    "registerSuccess": "注册成功",
+    "invalidCredentials": "用户名或密码错误",
+    "pleaseLogin": "请先登录"
+  },
+  "divination": {
+    "title": "周易占卜",
+    "start": "开始占卜",
+    "question": "请输入您的问题",
+    "questionPlaceholder": "例如：我应该换工作吗？",
+    "processing": "正在占卜中...",
+    "result": "占卜结果",
+    "outcomeGood": "吉",
+    "outcomeBad": "凶",
+    "outcomeNeutral": "平",
+    "hexagram": "卦象",
+    "summary": "摘要",
+    "detail": "详情",
+    "recommendations": "建议",
+    "history": "历史记录",
+    "questionRequired": "请输入问题",
+    "questionTooShort": "问题太短，请详细描述",
+    "cancel": "取消占卜"
+  },
+  "tarot": {
+    "title": "塔罗占卜",
+    "selectSpread": "选择牌阵",
+    "single": "单张牌",
+    "threeCard": "三张牌",
+    "celtic": "凯尔特十字"
+  },
+  "fortune": {
+    "title": "每日运势",
+    "today": "今日运势",
+    "score": "综合评分",
+    "wealth": "财运",
+    "career": "事业",
+    "love": "感情",
+    "health": "健康",
+    "luckyColor": "幸运颜色",
+    "luckyNumber": "幸运数字",
+    "luckyDirection": "幸运方位",
+    "luckyTime": "幸运时辰",
+    "yi": "宜",
+    "ji": "忌"
+  },
+  "history": {
+    "title": "历史记录",
+    "empty": "暂无历史记录",
+    "viewDetail": "查看详情",
+    "delete": "删除",
+    "deleteConfirm": "确定要删除这条记录吗？"
+  },
+  "profile": {
+    "title": "个人中心",
+    "settings": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "about": "关于",
+    "logout": "退出登录"
+  },
+  "error": {
+    "title": "出错了",
+    "message": "应用遇到了一些问题，请刷新页面重试",
+    "reload": "刷新页面",
+    "retry": "重试",
+    "networkError": "网络错误",
+    "serverError": "服务器错误",
+    "notFound": "页面不存在"
+  },
+  "offline": {
+    "title": "网络连接已断开",
+    "message": "看起来您当前处于离线状态。请检查您的网络连接，然后重试。",
+    "reconnect": "重新连接",
+    "tip": "提示：Divine Daily 支持离线浏览已缓存的内容"
+  },
+  "pwa": {
+    "install": "安装应用",
+    "installPrompt": "将 Divine Daily 添加到主屏幕，获得更好的体验",
+    "installed": "已安装",
+    "updateAvailable": "新版本可用",
+    "update": "更新"
+  }
+}

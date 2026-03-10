@@ -1,0 +1,239 @@
+.feedback-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.feedback-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.feedback-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.feedback-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+}
+
+.feedback-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.feedback-modal-close:hover {
+  background: #f3f4f6;
+}
+
+.feedback-modal-body {
+  padding: 20px;
+}
+
+.feedback-rating {
+  margin-bottom: 24px;
+}
+
+.feedback-rating label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.stars {
+  display: flex;
+  gap: 8px;
+  font-size: 36px;
+}
+
+.star {
+  cursor: pointer;
+  color: #ddd;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+.star.active {
+  color: #ffd700;
+}
+
+.star:hover {
+  color: #ffed4e;
+}
+
+.feedback-tags {
+  margin-bottom: 24px;
+}
+
+.feedback-tags label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+.tag:hover {
+  border-color: #6366f1;
+}
+
+.tag.selected {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.feedback-helpful {
+  margin-bottom: 24px;
+}
+
+.feedback-helpful label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.helpful-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.helpful-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+.helpful-buttons button:hover {
+  border-color: #6366f1;
+}
+
+.helpful-buttons button.active {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.feedback-comment {
+  margin-bottom: 24px;
+}
+
+.feedback-comment label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.feedback-comment textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+  color: #111;
+}
+
+.feedback-comment textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.char-count {
+  text-align: right;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.feedback-modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .feedback-modal {
+    max-height: 95vh;
+  }
+
+  .feedback-modal-header,
+  .feedback-modal-body,
+  .feedback-modal-footer {
+    padding: 16px;
+  }
+
+  .stars {
+    font-size: 32px;
+  }
+
+  .tag {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}

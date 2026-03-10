@@ -2,21 +2,71 @@ import { useEffect, useRef, useCallback } from 'react';
 import axiosInstance from '../lib/axios';
 import type { DivinationResult } from '../types/divination';
 
+/**
+ * 占卜轮询 Hook 配置选项
+ */
 interface UseDivinationPollingOptions {
+  /** 占卜会话ID */
   sessionId: string;
+  /** 成功回调 */
   onSuccess: (result: DivinationResult) => void;
-  onError: (error: Error) => void;
+  /** 错误回调 */
+  onError: (error: DivinationPollingError) => void;
+  /** 进度回调（可选） */
   onProgress?: (elapsed: number, attempts: number) => void;
+  /** 最大尝试次数，默认60次 */
   maxAttempts?: number;
+  /** 轮询间隔（毫秒），默认1000ms */
   interval?: number;
 }
 
+/**
+ * 占卜轮询错误类型
+ */
+export interface DivinationPollingError extends Error {
+  /** 错误类型 */
+  type: 'timeout' | 'network' | 'server' | 'cancelled' | 'unknown';
+  /** HTTP 状态码（如果有） */
+  statusCode?: number;
+  /** 原始错误对象 */
+  originalError?: any;
+}
+
+/**
+ * 创建友好的错误对象
+ */
+function createPollingError(
+  type: DivinationPollingError['type'],
+  message: string,
+  statusCode?: number,
+  originalError?: any
+): DivinationPollingError {
+  const error = new Error(message) as DivinationPollingError;
+  error.type = type;
+  error.statusCode = statusCode;
+  error.originalError = originalError;
+  return error;
+}
+
+/**
+ * 占卜结果轮询 Hook
+ * 
+ * 用于异步获取占卜结果，支持：
+ * - 自动轮询直到结果返回
+ * - 超时处理
+ * - 错误分类和友好提示
+ * - 进度回调
+ * - 手动取消
+ * 
+ * @param options - 轮询配置选项
+ * @returns 包含 cancel 方法的对象
+ */
 export const useDivinationPolling = ({
   sessionId,
   onSuccess,
   onError,
   onProgress,
-  maxAttempts = 60, // 增加到60次，配合60秒超时
+  maxAttempts = 60,
   interval = 1000,
 }: UseDivinationPollingOptions) => {
   const attemptsRef = useRef(0);
@@ -25,6 +75,9 @@ export const useDivinationPolling = ({
   const isMountedRef = useRef(true);
   const startTimeRef = useRef<number>(0);
 
+  /**
+   * 清理资源（定时器和请求）
+   */
   const cleanup = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -36,6 +89,9 @@ export const useDivinationPolling = ({
     }
   }, []);
 
+  /**
+   * 轮询占卜结果
+   */
   const pollResult = useCallback(async () => {
     // 如果没有 sessionId，不执行轮询
     if (!sessionId) {
@@ -47,9 +103,16 @@ export const useDivinationPolling = ({
       return;
     }
 
+    // 检查是否超过最大尝试次数
     if (attemptsRef.current >= maxAttempts) {
       cleanup();
-      onError(new Error('占卜超时，请重试。如果问题持续，请联系客服。'));
+      const error = createPollingError(
+        'timeout',
+        '占卜处理超时，请稍后在历史记录中查看结果，或重新占卜',
+        undefined,
+        undefined
+      );
+      onError(error);
       return;
     }
 
@@ -65,7 +128,7 @@ export const useDivinationPolling = ({
       // 创建新的 AbortController
       abortControllerRef.current = new AbortController();
 
-      // 修复：去掉 /result 后缀，匹配后端 API 路径
+      // 调用 API 获取结果
       const response = await axiosInstance.get<DivinationResult>(
         `/divinations/${sessionId}`,
         { 
@@ -82,6 +145,7 @@ export const useDivinationPolling = ({
       // 成功获取结果
       cleanup();
       onSuccess(response.data);
+      
     } catch (error: any) {
       if (!isMountedRef.current) {
         cleanup();
@@ -93,23 +157,82 @@ export const useDivinationPolling = ({
         return;
       }
 
-      // 如果是404，说明结果还未生成，继续轮询
-      if (error.response?.status === 404) {
+      // 分类处理错误
+      const statusCode = error.response?.status;
+      
+      // 404 表示结果还未生成，继续轮询
+      if (statusCode === 404) {
         if (attemptsRef.current < maxAttempts) {
           timerRef.current = setTimeout(pollResult, interval);
         } else {
           cleanup();
-          onError(new Error('占卜超时，请重试'));
+          const timeoutError = createPollingError(
+            'timeout',
+            '占卜处理超时，请稍后在历史记录中查看结果',
+            statusCode,
+            error
+          );
+          onError(timeoutError);
         }
         return;
       }
 
-      // 如果还有重试次数，继续轮询
+      // 500 服务器错误
+      if (statusCode && statusCode >= 500) {
+        cleanup();
+        const serverError = createPollingError(
+          'server',
+          '服务器繁忙，请稍后重试',
+          statusCode,
+          error
+        );
+        onError(serverError);
+        return;
+      }
+
+      // 401 认证错误
+      if (statusCode === 401) {
+        cleanup();
+        const authError = createPollingError(
+          'server',
+          '登录已过期，请重新登录',
+          statusCode,
+          error
+        );
+        onError(authError);
+        return;
+      }
+
+      // 网络错误
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || !statusCode) {
+        // 网络错误，继续重试
+        if (attemptsRef.current < maxAttempts) {
+          timerRef.current = setTimeout(pollResult, interval);
+        } else {
+          cleanup();
+          const networkError = createPollingError(
+            'network',
+            '网络连接失败，请检查网络后重试',
+            undefined,
+            error
+          );
+          onError(networkError);
+        }
+        return;
+      }
+
+      // 其他错误，继续重试
       if (attemptsRef.current < maxAttempts) {
         timerRef.current = setTimeout(pollResult, interval);
       } else {
         cleanup();
-        onError(error);
+        const unknownError = createPollingError(
+          'unknown',
+          error.response?.data?.detail || error.message || '占卜失败，请重试',
+          statusCode,
+          error
+        );
+        onError(unknownError);
       }
     }
   }, [sessionId, maxAttempts, interval, onSuccess, onError, onProgress, cleanup]);
@@ -134,5 +257,10 @@ export const useDivinationPolling = ({
     };
   }, [sessionId, pollResult, cleanup]);
 
-  return { cancel: cleanup };
+  return { 
+    /**
+     * 手动取消轮询
+     */
+    cancel: cleanup 
+  };
 };

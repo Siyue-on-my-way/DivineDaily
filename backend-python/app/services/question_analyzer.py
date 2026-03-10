@@ -2,6 +2,9 @@
 
 import json
 from typing import Dict, Any, Optional
+from app.core.logger import get_logger
+
+logger = get_logger("question_analyzer")
 from app.services.llm_service import LLMService
 
 
@@ -35,7 +38,7 @@ class QuestionAnalyzer:
                 if analysis:
                     return analysis
             except Exception as e:
-                print(f"[WARN] LLM分析失败，降级到规则引擎: {e}")
+                logger.warning(f"LLM分析失败，降级到规则引擎: {e}")
                 # LLM失败，降级到规则引擎
                 pass
         
@@ -159,7 +162,7 @@ class QuestionAnalyzer:
                 context=data.get("context", {})
             )
         except Exception as e:
-            print(f"[WARN] JSON解析失败: {e}")
+            logger.warning(f"JSON解析失败: {e}")
             return None
     
     def _fallback_analysis(self, question: str) -> QuestionAnalysis:

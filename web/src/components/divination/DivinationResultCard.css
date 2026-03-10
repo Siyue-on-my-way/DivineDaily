@@ -1,139 +1,420 @@
-/* 占卜结果卡片样式 - 清新绿色移动端 */
-
-.result-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
+/* Markdown 内容样式 */
+.markdown-content {
+  font-size: 15px;
+  line-height: 1.9;
+  color: #2c3e50;
+  letter-spacing: 0.3px;
 }
 
-.result-header {
+.markdown-content h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-  text-align: center;
+  gap: 8px;
 }
 
-.result-title {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
+.markdown-content h2:first-child {
+  margin-top: 0;
+}
+
+.markdown-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.markdown-content p {
+  margin-bottom: 16px;
+  text-align: justify;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.markdown-content li {
+  margin-bottom: 10px;
+  line-height: 1.8;
+}
+
+.markdown-content strong {
+  font-weight: 700;
+  color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: #718096;
+}
+
+.markdown-content code {
+  background: #f7fafc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #e53e3e;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #4a5568;
+  font-style: italic;
+  background: rgba(102, 126, 234, 0.05);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* 结果摘要样式 */
+.result-summary {
+  padding: 16px 0;
+}
+
+.result-summary.markdown-content {
+  font-size: 16px;
+  line-height: 2.0;
+}
+
+/* 详细内容样式 */
+.result-detail-content {
+  padding: 8px 0;
+}
+
+.result-detail-content.markdown-content {
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+/* 周易六爻展示 */
+.iching-card {
+  margin-bottom: 8px;
+}
+
+.iching-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.iching-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.iching-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.iching-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.iching-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iching-line-index {
+  width: 48px;
+  font-size: 0.8rem;
+  color: #a0aec0;
+}
+
+.iching-line-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #4a5568, #4a5568);
+}
+
+.iching-line--yin .iching-line-bar {
+  background:
+    linear-gradient(to right, #4a5568, #4a5568) 0 0 / 40% 100% no-repeat,
+    linear-gradient(to right, #4a5568, #4a5568) 100% 0 / 40% 100% no-repeat;
+}
+
+.iching-line--yang .iching-line-bar {
+  background: linear-gradient(to right, #4a5568, #4a5568);
+}
+
+.iching-line--changing .iching-line-bar {
+  box-shadow: 0 0 0 1px #667eea;
+}
+
+/* 大衍筮法起卦过程 */
+.yarrow-card {
+  margin-top: 8px;
+}
+
+.yarrow-intro {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 6px;
+}
+
+.yarrow-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.yarrow-line {
+  border-radius: 8px;
+  background: #f7fafc;
+  padding: 6px 8px;
+}
+
+.yarrow-line-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.yarrow-line-tag {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 193, 7, 0.12);
+  color: #b7791f;
+}
+
+.yarrow-line-body {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.yarrow-line-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin-bottom: 4px;
+}
+
+.yarrow-steps {
+  list-style: none;
+  padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* 结果徽章 */
-.result-badge--success {
-  background: var(--success-light);
-  color: var(--success);
+.yarrow-step {
+  font-size: 0.8rem;
 }
 
-.result-badge--warning {
-  background: var(--warning-light);
-  color: var(--warning);
+.yarrow-step-header {
+  display: flex;
+  justify-content: space-between;
+  color: #4a5568;
 }
 
-.result-badge--info {
-  background: var(--info-light);
-  color: var(--info);
+.yarrow-step-detail {
+  margin-top: 2px;
+  color: #718096;
 }
 
-/* 牌面展示 */
-.result-cards {
+/* 反馈区域 */
+.result-feedback-section {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-  flex-wrap: wrap;
+  margin-top: 16px;
 }
 
-.result-card-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
-  background: var(--bg-hover);
-  border-radius: var(--radius-md);
-  min-width: 80px;
+.feedback-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
 }
 
-.result-card-icon {
-  font-size: 32px;
-  transition: transform var(--transition-base);
+.feedback-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
 }
 
-.result-card-icon--reversed {
-  transform: rotate(180deg);
+.feedback-button:active {
+  transform: translateY(0);
 }
 
-.result-card-position {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  font-weight: var(--font-medium);
-}
-
-.result-card-name {
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  font-weight: var(--font-semibold);
+.feedback-thanks {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
   text-align: center;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
 }
 
-/* 摘要 */
-.result-summary {
-  font-size: var(--text-base);
-  line-height: var(--leading-relaxed);
-  color: var(--text-secondary);
-  white-space: pre-wrap;
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .markdown-content {
+    font-size: 14px;
+    line-height: 1.85;
+  }
+
+  .markdown-content h2 {
+    font-size: 17px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .markdown-content h3 {
+    font-size: 15px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+
+  .result-summary.markdown-content {
+    font-size: 15px;
+    line-height: 1.9;
+  }
+
+  .result-detail-content.markdown-content {
+    font-size: 14px;
+    line-height: 1.85;
+  }
 }
 
-/* 展开按钮 */
-.result-toggle {
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--border-light);
-}
-
-/* 详细内容 */
-.result-detail {
-  margin-top: var(--spacing-md);
-}
-
-.result-detail-content {
-  font-size: var(--text-base);
-  line-height: var(--leading-relaxed);
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-}
-
-/* 操作按钮 */
-.result-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-}
-
-/* 桌面端响应式适配 */
+/* 桌面端优化 */
 @media (min-width: 1024px) {
-  .divination-result-card {
-    max-width: 100%;
-    padding: 32px;
+  .markdown-content {
+    font-size: 16px;
+    line-height: 2.0;
+    max-width: 800px;
   }
-  
-  .divination-result-card__header {
-    flex-direction: row;
-    align-items: center;
-    gap: 24px;
+
+  .markdown-content h2 {
+    font-size: 20px;
+    margin-top: 28px;
+    margin-bottom: 14px;
   }
-  
-  .divination-result-card__content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
+
+  .markdown-content h3 {
+    font-size: 18px;
+    margin-top: 24px;
+    margin-bottom: 12px;
   }
-  
-  .divination-result-card__section {
-    margin-bottom: 0;
+
+  .result-summary.markdown-content {
+    font-size: 17px;
+    line-height: 2.1;
+  }
+
+  .result-detail-content.markdown-content {
+    font-size: 16px;
+    line-height: 2.0;
+  }
+}
+
+/* 打印样式优化 */
+@media print {
+  .markdown-content {
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #000;
+  }
+
+  .markdown-content h2 {
+    page-break-after: avoid;
+    color: #000;
+  }
+
+  .markdown-content strong {
+    background: none;
+    color: #000;
+    font-weight: bold;
+  }
+}
+
+/* 动画效果 */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 可访问性优化 */
+.markdown-content:focus-within {
+  outline: 2px solid #667eea;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .markdown-content {
+    color: #e2e8f0;
+  }
+
+  .markdown-content h2 {
+    color: #f7fafc;
+    border-bottom-color: #4a5568;
+  }
+
+  .markdown-content h3 {
+    color: #edf2f7;
+  }
+
+  .markdown-content strong {
+    color: #90cdf4;
+    background: rgba(144, 205, 244, 0.15);
+  }
+
+  .markdown-content code {
+    background: #2d3748;
+    color: #fc8181;
+  }
+
+  .markdown-content blockquote {
+    border-left-color: #90cdf4;
+    background: rgba(144, 205, 244, 0.1);
+    color: #cbd5e0;
   }
 }

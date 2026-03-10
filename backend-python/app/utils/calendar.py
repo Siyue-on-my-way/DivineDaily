@@ -14,10 +14,20 @@ class CalendarConverter:
     @staticmethod
     def l_year_days(year: int) -> int:
         """返回农历year年一整年的总天数"""
-        sum_days = 348
-        for i in range(0x8000, 0x8, -1):
-            if LUNAR_INFO[year - 1900] & i:
-                sum_days += 1
+        sum_days = 348  # 12个月 * 29天 = 348天（基础值）
+        info = LUNAR_INFO[year - 1900]
+        
+        # 检查12个月的天数（bit 4-15，从高位到低位）
+        # 0x10000 >> 1 = 0x8000 (bit 15, 第1个月)
+        # 0x10000 >> 2 = 0x4000 (bit 14, 第2个月)
+        # ...
+        # 0x10000 >> 12 = 0x10 (bit 4, 第12个月)
+        for i in range(1, 13):
+            bit_mask = 0x10000 >> i
+            if info & bit_mask:
+                sum_days += 1  # 该月为30天，加1
+        
+        # 加上闰月天数（如果有）
         return sum_days + CalendarConverter.leap_days(year)
     
     @staticmethod

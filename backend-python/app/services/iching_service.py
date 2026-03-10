@@ -1,8 +1,12 @@
 """周易六爻服务"""
 
 import hashlib
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from app.utils.hexagram_data import TRIGRAMS, HEXAGRAMS, get_hexagram_by_number
+
+from app.core.logger import get_logger
+logger = get_logger("iching")
+
 
 
 class Line:
@@ -41,6 +45,16 @@ class IChingService:
     """周易六爻服务"""
     
     @staticmethod
+    def _hash_to_int(seed: str) -> int:
+        """将种子字符串稳定映射为整数"""
+        return int(hashlib.md5(seed.encode()).hexdigest(), 16)
+
+    @staticmethod
+    def _line_type(value: int) -> str:
+        mapping = {6: "老阴", 7: "少阳", 8: "少阴", 9: "老阳"}
+        return mapping.get(value, "少阳")
+
+    @staticmethod
     def cast_line(seed: str, line_index: int) -> int:
         """
         摇卦：模拟投掷3枚硬币，生成一爻
@@ -52,20 +66,88 @@ class IChingService:
             hash_input = f"{seed}-coin{i+1}-{line_index}".encode()
             hash_value = int(hashlib.md5(hash_input).hexdigest(), 16)
             coins.append(hash_value % 2)  # 0=反面, 1=正面
-        
+
         # 计算总和并映射到传统值
         coin_sum = sum(coins)
         mapping = {0: 6, 1: 7, 2: 8, 3: 9}  # 老阴、少阳、少阴、老阳
         return mapping.get(coin_sum, 7)
+
+    @staticmethod
+    def cast_line_dayan(seed: str, line_index: int) -> Tuple[int, Dict[str, Any]]:
+        """使用大衍筮法（数字模拟）生成单爻，并返回过程记录"""
+        stalks = 49
+        changes: List[Dict[str, Any]] = []
+
+        for step in range(1, 4):
+            rand = IChingService._hash_to_int(f"{seed}-line-{line_index}-step-{step}")
+            # 分两堆，保证左右都大于0
+            left = (rand % (stalks - 1)) + 1
+            right_before_hang = stalks - left
+
+            # 挂一：从右手取1
+            right_after_hang = right_before_hang - 1
+            hang_one = 1
+
+            left_remainder = left % 4 or 4
+            right_remainder = right_after_hang % 4 or 4
+            removed = hang_one + left_remainder + right_remainder
+            stalks_after = stalks - removed
+
+            changes.append({
+                "step_index": step,
+                "stalks_before": stalks,
+                "left_pile": left,
+                "right_pile_before_hang": right_before_hang,
+                "right_hang_one": hang_one,
+                "right_pile_after_hang": right_after_hang,
+                "left_remainder": left_remainder,
+                "right_remainder": right_remainder,
+                "removed": removed,
+                "stalks_after": stalks_after,
+            })
+            stalks = stalks_after
+
+        # 三变后以 4 为基数映射到 6/7/8/9
+        line_base = stalks // 4
+        mapping = {6: 6, 7: 7, 8: 8, 9: 9}
+        line_value = mapping.get(line_base, 7)
+
+        trace = {
+            "line_index": line_index + 1,
+            "initial_stalks": 49,
+            "changes": changes,
+            "final_stalks": stalks,
+            "line_value": line_value,
+            "line_type": IChingService._line_type(line_value),
+            "is_changing": line_value in [6, 9],
+        }
+        return line_value, trace
     
     @staticmethod
-    def generate_six_lines(session_id: str) -> SixLines:
-        """生成六爻"""
+    def generate_six_lines(session_id: str, method: str = "dayan") -> Tuple[SixLines, Optional[Dict[str, Any]]]:
+        """生成六爻，支持返回起卦过程记录"""
         lines = []
+        yarrow_lines: List[Dict[str, Any]] = []
+
         for i in range(6):
-            value = IChingService.cast_line(session_id, i)
+            if method == "dayan":
+                value, trace = IChingService.cast_line_dayan(session_id, i)
+                yarrow_lines.append(trace)
+            else:
+                value = IChingService.cast_line(session_id, i)
             lines.append(Line(value))
-        return SixLines(lines)
+
+        six_lines = SixLines(lines)
+        yarrow_trace = None
+        if method == "dayan":
+            yarrow_trace = {
+                "method": "dayan_yarrow",
+                "total_stalks": 50,
+                "effective_stalks": 49,
+                "lines": yarrow_lines,
+            }
+
+        return six_lines, yarrow_trace
     
     @staticmethod
     def calculate_changed_hexagram(original: SixLines) -> SixLines:
@@ -107,6 +189,7 @@ class IChingService:
             'detail': detail,
             'wuxing': hexagram.get('wuxing', ''),
             'changing_lines': six_lines.changing_lines,
+            'line_values': [line.value for line in six_lines.lines],
         }
     
     @staticmethod
@@ -179,14 +262,14 @@ class IChingService:
         return "\n".join(lines)
     
     @staticmethod
-    def generate_result(session_id: str, question: str) -> Dict[str, Any]:
+    def generate_result(session_id: str, question: str, method: str = "dayan") -> Dict[str, Any]:
         """生成完整的周易占卜结果"""
         # 生成六爻
-        six_lines = IChingService.generate_six_lines(session_id)
-        
+        six_lines, yarrow_trace = IChingService.generate_six_lines(session_id, method=method)
+
         # 获取卦象信息
         hexagram_info = IChingService.get_hexagram_info(six_lines)
-        
+
         return {
             'session_id': session_id,
             'outcome': hexagram_info['outcome'],
@@ -194,4 +277,5 @@ class IChingService:
             'summary': hexagram_info['summary'],
             'detail': hexagram_info['detail'],
             'hexagram_info': hexagram_info,
+            'yarrow_trace': yarrow_trace,
         }

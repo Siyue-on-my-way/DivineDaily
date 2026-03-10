@@ -19,6 +19,12 @@ const STAGES = {
   RESULT: 2
 };
 
+/**
+ * 占卜流程主组件
+ * 
+ * 管理占卜的完整流程：问题输入 -> 占卜执行 -> 结果展示
+ * 问题质量由后端智能判断，前端无需提醒
+ */
 export default function RitualFlow() {
   const { isAuthenticated, setShowLoginModal, user } = useAuth();
   const [stage, setStage] = useState(STAGES.QUESTION);
@@ -40,10 +46,14 @@ export default function RitualFlow() {
       setSessionId('');
       toast.error(error.message || '占卜失败，请重试');
     },
-    maxAttempts: 60, // 增加到60次，配合60秒超时
+    maxAttempts: 60,
     interval: 1000,
   });
 
+  /**
+   * 开始占卜
+   * 简化流程：直接提交问题，后端智能处理
+   */
   const startDivination = async () => {
     // 检查登录状态
     if (!isAuthenticated) {
@@ -66,11 +76,10 @@ export default function RitualFlow() {
         orientation: 'E'
       });
 
-      // 修复：后端返回的是 session_id，不是 id
       const sessionIdFromResponse = startRes.data.session_id || startRes.data.id;
       
       if (!sessionIdFromResponse) {
-        // 如果后端直接返回了完整结果（不需要轮询）
+        // 直接返回结果的情况（低质量问题）
         if (startRes.data.summary && startRes.data.detail) {
           setResult(startRes.data);
           setStage(STAGES.RESULT);
@@ -84,12 +93,26 @@ export default function RitualFlow() {
     } catch (err: any) {
       console.error('Divination failed', err);
       setStage(STAGES.QUESTION);
-      toast.error(err.response?.data?.message || '占卜失败，请重试');
+      
+      // 根据错误类型提供友好的错误提示
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message;
+      if (err.response?.status === 500) {
+        toast.error('服务器繁忙，请稍后重试');
+      } else if (err.response?.status === 401) {
+        toast.error('登录已过期，请重新登录');
+        setShowLoginModal(true);
+      } else if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('占卜失败，请检查网络连接后重试');
+      }
     }
   };
 
+  /**
+   * 重置占卜状态，返回问题输入页面
+   */
   const resetDivination = () => {
-    // 取消正在进行的轮询
     polling.cancel();
     setStage(STAGES.QUESTION);
     setQuestion('');
@@ -97,6 +120,9 @@ export default function RitualFlow() {
     setSessionId('');
   };
 
+  /**
+   * 取消正在进行的占卜
+   */
   const handleCancelLoading = () => {
     polling.cancel();
     setStage(STAGES.QUESTION);
@@ -140,7 +166,7 @@ export default function RitualFlow() {
                     <path d="M12 16v-4"/>
                     <path d="M12 8h.01"/>
                   </svg>
-                  <span>AI 会自动分析你的问题类型，无需手动选择</span>
+                  <span>AI 会智能分析你的问题，给出最适合的回答</span>
                 </div>
               </CardContent>
             </Card>

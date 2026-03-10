@@ -1,6 +1,6 @@
 """安全相关工具（JWT、密码加密）"""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 import bcrypt
@@ -31,14 +31,14 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(hours=settings.JWT_EXPIRE_HOURS)
+        expire = datetime.now(timezone.utc) + timedelta(hours=settings.JWT_EXPIRE_HOURS)
     
     to_encode.update({
         "exp": expire,
-        "iat": datetime.utcnow(),
-        "nbf": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
+        "nbf": datetime.now(timezone.utc),
     })
     
     encoded_jwt = jwt.encode(

@@ -18,6 +18,10 @@ from app.schemas.user_management import (
 from app.core.security import get_password_hash
 from app.core.exceptions import NotFoundError, BadRequestError, PermissionDeniedError
 
+from app.core.logger import get_logger
+logger = get_logger("user_management")
+
+
 
 class UserManagementService:
     """用户管理服务"""

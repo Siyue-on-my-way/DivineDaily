@@ -15,6 +15,7 @@ class HexagramInfo(BaseModel):
     summary: str = Field(..., description="卦辞摘要")
     wuxing: str = Field(..., description="五行")
     changing_lines: Optional[List[int]] = Field(None, description="变爻位置")
+    line_values: Optional[List[int]] = Field(None, description="六爻值（自下而上，6/7/8/9）")
 
 
 class TarotCard(BaseModel):
@@ -50,22 +51,61 @@ class DailyFortuneInfo(BaseModel):
     festival: str = Field("", description="节日")
 
 
+class YarrowChangeStep(BaseModel):
+    """大衍筮法单次变的记录"""
+    step_index: int = Field(..., ge=1, le=3, description="第几变（1-3）")
+    stalks_before: int = Field(..., description="本变开始前蓍草数")
+    left_pile: int = Field(..., description="左手蓍草数")
+    right_pile_before_hang: int = Field(..., description="右手蓍草数（挂一前）")
+    right_hang_one: int = Field(..., description="挂一数量，固定为1")
+    right_pile_after_hang: int = Field(..., description="右手蓍草数（挂一后）")
+    left_remainder: int = Field(..., description="左手取四余数（0按4计）")
+    right_remainder: int = Field(..., description="右手取四余数（0按4计）")
+    removed: int = Field(..., description="本变去除总数")
+    stalks_after: int = Field(..., description="本变结束后蓍草数")
+
+
+class YarrowLineTrace(BaseModel):
+    """单爻生成过程"""
+    line_index: int = Field(..., ge=1, le=6, description="爻位（1-6，自下而上）")
+    initial_stalks: int = Field(..., description="初始蓍草数，通常49")
+    changes: List[YarrowChangeStep] = Field(default_factory=list, description="三变过程")
+    final_stalks: int = Field(..., description="三变后剩余蓍草数")
+    line_value: int = Field(..., description="爻值（6/7/8/9）")
+    line_type: str = Field(..., description="爻类型（老阴/少阳/少阴/老阳）")
+    is_changing: bool = Field(..., description="是否变爻")
+
+
+class YarrowProcessTrace(BaseModel):
+    """大衍筮法完整过程记录"""
+    method: str = Field("dayan_yarrow", description="起卦方法")
+    total_stalks: int = Field(50, description="总蓍草数")
+    effective_stalks: int = Field(49, description="参与演算蓍草数")
+    lines: List[YarrowLineTrace] = Field(default_factory=list, description="六爻过程（自下而上）")
+
+
 class DivinationResult(BaseModel):
     """占卜结果"""
     session_id: str
+    status: Optional[str] = Field(None, description="状态：processing/completed/failed")
     outcome: Optional[str] = None  # 吉/凶/平
     title: Optional[str] = None
     spread: Optional[str] = None
     cards: Optional[List[TarotCard]] = None
     
-    # 结果内容
-    summary: str = Field(..., description="简要结果")
-    detail: str = Field(..., description="详细解释")
+    # 结果内容（processing 状态时可为空）
+    summary: Optional[str] = Field(None, description="简要结果")
+    detail: Optional[str] = Field(None, description="详细解释")
     
     # 结构化数据
     hexagram_info: Optional[HexagramInfo] = None
     recommendations: Optional[List[RecommendationItem]] = None
     daily_fortune: Optional[DailyFortuneInfo] = None
+    yarrow_trace: Optional[YarrowProcessTrace] = Field(None, description="大衍筮法过程记录")
+    
+    # 问题分析信息
+    question_type: Optional[str] = None
+    question_intent: Optional[str] = None
     
     needs_follow_up: bool = False
     created_at: datetime
@@ -74,6 +114,7 @@ class DivinationResult(BaseModel):
         json_schema_extra = {
             "example": {
                 "session_id": "uuid-here",
+                "status": "completed",
                 "outcome": "吉",
                 "summary": "此卦大吉，诸事顺利",
                 "detail": "详细的卦象解释...",

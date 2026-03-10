@@ -7,7 +7,7 @@
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.divination import DivinationSession as DivinationSessionModel
@@ -75,8 +75,9 @@ class DivinationService:
             hexagram_info=result.get('hexagram_info'),
             recommendations=result.get('recommendations'),
             daily_fortune=result.get('daily_fortune'),
+            yarrow_trace=result.get('yarrow_trace'),
             needs_follow_up=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
     
     async def _process_iching(self, session_id: str, request: CreateDivinationRequest) -> Dict[str, Any]:
@@ -87,7 +88,12 @@ class DivinationService:
     async def _process_tarot(self, session_id: str, request: CreateDivinationRequest) -> Dict[str, Any]:
         """处理塔罗占卜（支持LLM增强）"""
         spread = request.spread or "single"
-        result = await self.tarot_service.generate_result(session_id, request.question, spread)
+        result = await self.tarot_service.generate_result(
+            session_id,
+            request.question,
+            spread,
+            request.context,
+        )
         return result
     
     async def get_result(self, session_id: str) -> Optional[DivinationResult]:
@@ -102,22 +108,27 @@ class DivinationService:
         if not session:
             raise NotFoundError(detail="占卜会话不存在")
         
-        if session.status != "completed":
-            raise BadRequestError(detail="占卜尚未完成")
+        # 如果状态为 failed，抛出错误
+        if session.status == "failed":
+            raise BadRequestError(detail="占卜失败")
+        
+        # processing 和 completed 状态都返回结果
         
         result_data = session.result_data or {}
         
         return DivinationResult(
             session_id=session.id,
+            status=session.status,  # 添加 status 字段
             outcome=result_data.get('outcome'),
             title=result_data.get('title'),
             spread=result_data.get('spread'),
             cards=result_data.get('cards'),
-            summary=session.result_summary or "",
-            detail=session.result_detail or "",
+            summary=session.result_summary,  # processing 时为 None
+            detail=session.result_detail,    # processing 时为 None
             hexagram_info=result_data.get('hexagram_info'),
             recommendations=result_data.get('recommendations'),
             daily_fortune=result_data.get('daily_fortune'),
+            yarrow_trace=result_data.get('yarrow_trace'),
             needs_follow_up=False,
             created_at=session.created_at,
         )

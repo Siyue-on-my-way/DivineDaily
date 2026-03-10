@@ -5,6 +5,10 @@ import json
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 
+from app.core.logger import get_logger
+logger = get_logger("llm")
+
+
 
 class LLMService(ABC):
     """LLM服务抽象基类"""
@@ -84,8 +88,8 @@ class OpenAICompatibleLLMService(LLMService):
         
         except Exception as e:
             import traceback
-            print(f"LLM调用失败: {type(e).__name__}: {str(e)}")
-            print(f"详细错误:\n{traceback.format_exc()}")
+            logger.info(f"LLM调用失败: {type(e).__name__}: {str(e)}")
+            logger.info(f"详细错误:\n{traceback.format_exc()}")
             # 降级到Mock服务
             return await MockLLMService().generate(prompt)
     
@@ -149,7 +153,7 @@ def create_llm_service(
         )
     else:
         # 未知provider，返回Mock服务
-        print(f"未知的LLM provider: {provider}，使用Mock服务")
+        logger.info(f"未知的LLM provider: {provider}，使用Mock服务")
         return MockLLMService()
 
 

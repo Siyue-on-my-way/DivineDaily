@@ -13,6 +13,7 @@ interface DivinationHistoryListProps {
   onPageChange: (page: number) => void;
   onFilterChange: (type: string) => void;
   onSearch: (keyword: string) => void;
+  onViewDetail: (divination: UserDivination) => void;
 }
 
 export default function DivinationHistoryList({
@@ -26,6 +27,7 @@ export default function DivinationHistoryList({
   onPageChange,
   onFilterChange,
   onSearch,
+  onViewDetail,
 }: DivinationHistoryListProps) {
   const [searchInput, setSearchInput] = useState(searchKeyword);
 
@@ -147,7 +149,12 @@ export default function DivinationHistoryList({
                 )}
               </div>
               <div className="item-footer">
-                <button className="view-detail-btn">查看详情</button>
+                <button 
+                  className="view-detail-btn"
+                  onClick={() => onViewDetail(divination)}
+                >
+                  查看详情
+                </button>
               </div>
             </div>
           ))

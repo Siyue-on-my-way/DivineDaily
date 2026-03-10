@@ -6,6 +6,10 @@ import json
 from typing import List, Dict, Any, Tuple, Optional
 from app.utils.tarot_data import TAROT_CARDS, get_spread_positions
 
+from app.core.logger import get_logger
+logger = get_logger("tarot")
+
+
 
 class TarotService:
     """塔罗牌服务"""
@@ -23,7 +27,7 @@ class TarotService:
         self.llm_repo = llm_repo
     
     @staticmethod
-    def draw_cards(session_id: str, spread: str = "single") -> Tuple[List[Dict], List[str]]:
+    def draw_cards(session_seed: str, spread: str = "single") -> Tuple[List[Dict], List[str]]:
         """
         抽牌
         返回：(抽到的牌列表, 位置列表)
@@ -31,9 +35,9 @@ class TarotService:
         # 根据牌阵确定抽牌数量和位置
         positions = get_spread_positions(spread)
         count = len(positions)
-        
-        # 使用session_id作为随机种子，确保可重现
-        hash_value = int(hashlib.md5(session_id.encode()).hexdigest(), 16)
+
+        # 使用 session_seed 作为随机种子，确保可重现
+        hash_value = int(hashlib.md5(session_seed.encode()).hexdigest(), 16)
         rng = random.Random(hash_value)
         
         # 随机抽取不重复的牌
@@ -54,10 +58,18 @@ class TarotService:
         
         return cards, positions
     
-    async def generate_result(self, session_id: str, question: str, spread: str = "single") -> Dict[str, Any]:
+    async def generate_result(
+        self,
+        session_id: str,
+        question: str,
+        spread: str = "single",
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """生成完整的塔罗占卜结果（支持LLM增强）"""
+        session_seed = self._build_session_seed(session_id, question, spread, context)
+
         # 抽牌
-        cards, positions = self.draw_cards(session_id, spread)
+        cards, positions = self.draw_cards(session_seed, spread)
         
         # 尝试使用LLM增强解读
         if self.llm_service and self.prompt_repo:
@@ -74,7 +86,7 @@ class TarotService:
                         'detail': enhanced_result.get('detail', ''),
                     }
             except Exception as e:
-                print(f"[WARN] LLM增强失败，使用基础解读: {e}")
+                logger.warning(f"LLM增强失败，使用基础解读: {e}")
                 import traceback
                 traceback.print_exc()
         
@@ -91,18 +103,47 @@ class TarotService:
             'detail': detail,
         }
     
+    @staticmethod
+    def _build_session_seed(
+        session_id: str,
+        question: str,
+        spread: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """构建塔罗抽牌种子，让用户交互（洗牌/切牌）可影响抽牌结果"""
+        base = {
+            "session_id": session_id,
+            "question": question,
+            "spread": spread,
+        }
+
+        # 仅提取与塔罗交互相关字段，避免种子受无关字段波动
+        tarot_ctx = {}
+        if context and isinstance(context, dict):
+            interaction = context.get("tarot_interaction")
+            if isinstance(interaction, dict):
+                tarot_ctx = {
+                    "cut_position": interaction.get("cut_position"),
+                    "shuffle_trace": interaction.get("shuffle_trace", []),
+                    "spread": interaction.get("spread"),
+                }
+
+        seed_payload = {"base": base, "tarot_interaction": tarot_ctx}
+        seed_str = json.dumps(seed_payload, ensure_ascii=False, sort_keys=True)
+        return hashlib.md5(seed_str.encode()).hexdigest()
+
     async def _enhance_with_llm(self, question: str, cards: List[Dict], 
                                 positions: List[str], spread: str) -> Optional[Dict[str, Any]]:
         """使用LLM增强塔罗牌解读"""
-        print(f"[DEBUG] 开始LLM增强塔罗牌解读")
+        logger.debug(f"开始LLM增强塔罗牌解读")
         
         # 获取Prompt配置
         prompt_config = await self.prompt_repo.get_by_scene_and_type("tarot", "answer")
         if not prompt_config:
-            print(f"[WARN] 未找到塔罗牌Prompt配置")
+            logger.warning(f"未找到塔罗牌Prompt配置")
             return None
         
-        print(f"[DEBUG] 使用Prompt配置: {prompt_config.name}")
+        logger.debug(f"使用Prompt配置: {prompt_config.name}")
         
         # 构建牌面信息字符串
         cards_info = self._format_cards_for_prompt(cards, positions)
@@ -120,7 +161,7 @@ class TarotService:
             cards=cards_info
         )
         
-        print(f"[DEBUG] Prompt构建完成，长度: {len(prompt)}")
+        logger.debug(f"Prompt构建完成，长度: {len(prompt)}")
         
         # 获取LLM配置
         if prompt_config.llm_config_id and self.llm_repo:
@@ -140,9 +181,9 @@ class TarotService:
         
         # 调用LLM
         try:
-            print(f"[DEBUG] 调用LLM生成解读...")
+            logger.debug(f"调用LLM生成解读...")
             response = await llm.generate_answer(prompt)
-            print(f"[DEBUG] LLM返回结果，长度: {len(response)}")
+            logger.debug(f"LLM返回结果，长度: {len(response)}")
             
             # 解析JSON响应
             parsed = self._parse_llm_response(response)
@@ -157,7 +198,7 @@ class TarotService:
                     'llm_raw': parsed
                 }
             else:
-                print(f"[WARN] 无法解析LLM响应")
+                logger.warning(f"无法解析LLM响应")
                 return None
                 
         finally:
@@ -181,15 +222,15 @@ class TarotService:
     
     def _parse_llm_response(self, response: str) -> Optional[Dict[str, Any]]:
         """解析LLM的JSON响应"""
-        print(f"[DEBUG] 开始解析LLM响应,长度: {len(response)}")
+        logger.debug(f"开始解析LLM响应,长度: {len(response)}")
         
         try:
             # 尝试直接解析
             parsed = json.loads(response)
-            print(f"[DEBUG] 直接解析成功")
+            logger.debug(f"直接解析成功")
             return parsed
         except json.JSONDecodeError as e:
-            print(f"[DEBUG] 直接解析失败: {e}")
+            logger.debug(f"直接解析失败: {e}")
             
             # 尝试提取JSON代码块
             import re
@@ -197,22 +238,22 @@ class TarotService:
             if json_match:
                 try:
                     parsed = json.loads(json_match.group(1))
-                    print(f"[DEBUG] 从```json```代码块解析成功")
+                    logger.debug(f"从```json```代码块解析成功")
                     return parsed
                 except Exception as e2:
-                    print(f"[DEBUG] 从代码块解析失败: {e2}")
+                    logger.debug(f"从代码块解析失败: {e2}")
             
             # 尝试查找第一个完整的JSON对象
             json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response, re.DOTALL)
             if json_match:
                 try:
                     parsed = json.loads(json_match.group(0))
-                    print(f"[DEBUG] 从正则匹配解析成功")
+                    logger.debug(f"从正则匹配解析成功")
                     return parsed
                 except Exception as e3:
-                    print(f"[DEBUG] 从正则匹配解析失败: {e3}")
+                    logger.debug(f"从正则匹配解析失败: {e3}")
             
-            print(f"[ERROR] 所有解析方法都失败")
+            logger.error(f"所有解析方法都失败")
             return None
     
     def _build_summary_from_llm(self, parsed: Dict[str, Any]) -> str:

@@ -76,12 +76,45 @@ export const DivinationLoading: React.FC<DivinationLoadingProps> = ({ onCancel }
         {/* 太极图动画 */}
         <div className="taiji-container">
           <div className="taiji-symbol">
-            <div className="taiji-half taiji-white">
-              <div className="taiji-dot taiji-dot-black"></div>
-            </div>
-            <div className="taiji-half taiji-black">
-              <div className="taiji-dot taiji-dot-white"></div>
-            </div>
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+              {/* 外圆边框 */}
+              <circle 
+                cx="60" 
+                cy="60" 
+                r="58" 
+                fill="none" 
+                stroke="#FFD700" 
+                strokeWidth="2"
+              />
+              
+              {/* 白色阴鱼（左半部分 + 上半小圆） */}
+              <path 
+                d="M60,2 A58,58 0 0,1 60,118 A29,29 0 0,1 60,60 A29,29 0 0,0 60,2 Z" 
+                fill="#FFFFFF"
+              />
+              
+              {/* 黑色阳鱼（右半部分 + 下半小圆） */}
+              <path 
+                d="M60,2 A58,58 0 0,0 60,118 A29,29 0 0,0 60,60 A29,29 0 0,1 60,2 Z" 
+                fill="#000000"
+              />
+              
+              {/* 白鱼中的黑眼 */}
+              <circle 
+                cx="60" 
+                cy="31" 
+                r="8" 
+                fill="#000000"
+              />
+              
+              {/* 黑鱼中的白眼 */}
+              <circle 
+                cx="60" 
+                cy="89" 
+                r="8" 
+                fill="#FFFFFF"
+              />
+            </svg>
           </div>
         </div>
 
@@ -124,4 +157,3 @@ export const DivinationLoading: React.FC<DivinationLoadingProps> = ({ onCancel }
     </div>
   );
 };
-

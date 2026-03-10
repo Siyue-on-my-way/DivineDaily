@@ -82,6 +82,31 @@
   margin-bottom: 24px;
 }
 
+.tarot-shuffle-visual {
+  text-align: center;
+}
+
+.tarot-shuffle-text {
+  font-size: 14px;
+  color: var(--color-starlight-dim);
+  margin-top: 8px;
+}
+
+.tarot-shuffle-control {
+  margin-top: 16px;
+}
+
+.tarot-shuffle-label {
+  display: block;
+  font-size: 13px;
+  color: var(--color-starlight);
+  margin-bottom: 4px;
+}
+
+.tarot-shuffle-control input[type="range"] {
+  width: 100%;
+}
+
 .tarot-tip {
   display: flex;
   align-items: center;

@@ -1,0 +1,252 @@
+.insights-container {
+  padding: var(--spacing-md);
+}
+
+.insights-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.insights-loading,
+.insights-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+  min-height: 300px;
+}
+
+.insights-loading p,
+.insights-error p {
+  color: var(--text-secondary);
+  margin-top: var(--spacing-md);
+}
+
+.error-icon {
+  font-size: 64px;
+}
+
+/* 统计卡片网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+  text-align: center;
+  padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 类型分布 */
+.type-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.type-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.type-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.type-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.type-count {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.type-bar {
+  height: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.type-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-color-light));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.type-percentage {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+/* 活动列表 */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.activity-item {
+  padding: var(--spacing-sm);
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.activity-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xs);
+  gap: var(--spacing-sm);
+}
+
+.activity-question {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.activity-meta {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.activity-type,
+.activity-outcome,
+.activity-quality {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.activity-type {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.activity-outcome {
+  font-weight: 500;
+}
+
+.outcome-吉 {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.outcome-凶 {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.outcome-平 {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.activity-quality {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* 建议列表 */
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.recommendation-item {
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.recommendation-item.priority-high {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+.recommendation-item.priority-medium {
+  background-color: #fffbeb;
+  border-color: #f59e0b;
+}
+
+.recommendation-item.priority-low {
+  background-color: #f0fdf4;
+  border-color: #10b981;
+}
+
+.recommendation-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.recommendation-icon {
+  font-size: 18px;
+}
+
+.recommendation-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.recommendation-message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 响应式 */
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

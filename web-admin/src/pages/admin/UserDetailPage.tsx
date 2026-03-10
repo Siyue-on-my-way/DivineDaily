@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast';
 import UserInfoCard from '../../components/user/UserInfoCard';
 import DivinationStatsCard from '../../components/user/DivinationStatsCard';
 import DivinationHistoryList from '../../components/user/DivinationHistoryList';
+import DivinationDetailModal from '../../components/user/DivinationDetailModal';
 import './UserDetailPage.css';
 
 export default function UserDetailPage() {
@@ -21,6 +22,8 @@ export default function UserDetailPage() {
   const [total, setTotal] = useState(0);
   const [filterType, setFilterType] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedDivination, setSelectedDivination] = useState<UserDivination | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 加载用户详情
   useEffect(() => {
@@ -49,7 +52,13 @@ export default function UserDetailPage() {
     const loadDivinations = async () => {
       setDivinationLoading(true);
       try {
-        const data = await getUserDivinations(parseInt(userId), currentPage, 10);
+        const data = await getUserDivinations(
+          parseInt(userId), 
+          currentPage, 
+          10,
+          filterType,
+          searchKeyword
+        );
         setDivinations(data.divinations);
         setTotal(data.total);
       } catch (error: any) {
@@ -60,7 +69,7 @@ export default function UserDetailPage() {
     };
 
     loadDivinations();
-  }, [userId, currentPage]);
+  }, [userId, currentPage, filterType, searchKeyword]);
 
   const handleBack = () => {
     navigate('/admin/users');
@@ -74,6 +83,16 @@ export default function UserDetailPage() {
   const handleSearch = (keyword: string) => {
     setSearchKeyword(keyword);
     setCurrentPage(1);
+  };
+
+  const handleViewDetail = (divination: UserDivination) => {
+    setSelectedDivination(divination);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedDivination(null);
   };
 
   if (loading) {
@@ -125,8 +144,16 @@ export default function UserDetailPage() {
           onPageChange={setCurrentPage}
           onFilterChange={handleFilterChange}
           onSearch={handleSearch}
+          onViewDetail={handleViewDetail}
         />
       </div>
+
+      {/* 占卜详情弹窗 */}
+      <DivinationDetailModal
+        divination={selectedDivination}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }

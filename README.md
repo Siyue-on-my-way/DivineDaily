@@ -58,10 +58,11 @@ cd /mnt/DivineDaily
 
 ### 2. 访问应用
 
-- 📱 移动端：http://localhost:40080
-- 🔧 管理后台：http://localhost:40081
-- 🚀 后端 API：http://localhost:48080
-- 📚 API 文档：http://localhost:48080/docs
+- 🌐 统一入口（Nginx）：http://localhost:6180
+- 📱 移动端（Nginx 路由）：http://localhost:6180
+- 🔧 管理后台（直连）：http://localhost:6181
+- 🚀 后端 API（Nginx 路由）：http://localhost:6180/api/v1
+- 📚 API 文档（直连后端）：http://localhost:48080/docs
 
 ### 3. 默认账号
 

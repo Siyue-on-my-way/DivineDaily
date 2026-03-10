@@ -7,34 +7,33 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
+  errorInfo?: ErrorInfo;
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+    this.setState({ errorInfo });
     
-    // 在生产环境中，可以将错误上报到监控平台
-    if (process.env.NODE_ENV === 'production') {
-      // TODO: 集成错误监控服务（如 Sentry）
-      // reportErrorToService(error, errorInfo);
-    }
+    // 可以发送到错误追踪服务
+    // sendToErrorTracking(error, errorInfo);
   }
 
-  private handleReset = () => {
-    this.setState({ hasError: false, error: null });
+  handleReset = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
@@ -48,56 +47,103 @@ class ErrorBoundary extends Component<Props, State> {
           justifyContent: 'center',
           minHeight: '100vh',
           padding: '20px',
-          textAlign: 'center',
-          background: '#f9fafb',
+          backgroundColor: '#f5f5f5',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
           <div style={{
             maxWidth: '500px',
-            padding: '40px',
-            background: 'white',
+            width: '100%',
+            backgroundColor: 'white',
             borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            padding: '32px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>😵</div>
-            <h2 style={{ fontSize: '24px', marginBottom: '12px', color: '#1f2937' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>😵</div>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: '600', 
+              marginBottom: '12px',
+              color: '#333'
+            }}>
               出错了
             </h2>
-            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px' }}>
-              {process.env.NODE_ENV === 'development' 
-                ? this.state.error?.message 
-                : '应用遇到了一个错误，请刷新页面重试'}
+            <p style={{ 
+              fontSize: '16px', 
+              color: '#666', 
+              marginBottom: '24px',
+              lineHeight: '1.5'
+            }}>
+              应用遇到了一些问题，请刷新页面重试
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                padding: '12px 24px',
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
+            
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details style={{
+                marginBottom: '24px',
+                textAlign: 'left',
+                backgroundColor: '#f9f9f9',
+                padding: '12px',
                 borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                marginRight: '12px',
-              }}
-            >
-              刷新页面
-            </button>
-            <button
-              onClick={this.handleReset}
-              style={{
-                padding: '12px 24px',
-                background: '#f3f4f6',
-                color: '#1f2937',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-              }}
-            >
-              重试
-            </button>
+                fontSize: '14px'
+              }}>
+                <summary style={{ cursor: 'pointer', fontWeight: '500', marginBottom: '8px' }}>
+                  错误详情
+                </summary>
+                <pre style={{
+                  overflow: 'auto',
+                  fontSize: '12px',
+                  color: '#d32f2f',
+                  margin: 0
+                }}>
+                  {this.state.error.toString()}
+                  {this.state.errorInfo && '\n\n' + this.state.errorInfo.componentStack}
+                </pre>
+              </details>
+            )}
+            
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: 'white',
+                  backgroundColor: '#6366f1',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
+              >
+                刷新页面
+              </button>
+              
+              <button
+                onClick={this.handleReset}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: '#6366f1',
+                  backgroundColor: 'white',
+                  border: '2px solid #6366f1',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f0f0ff';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                }}
+              >
+                重试
+              </button>
+            </div>
           </div>
         </div>
       );

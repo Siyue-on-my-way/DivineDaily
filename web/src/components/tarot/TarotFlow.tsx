@@ -15,8 +15,9 @@ import './TarotFlow.css';
 const STAGES = {
   SPREAD_SELECT: 0,
   QUESTION: 1,
-  LOADING: 2,
-  RESULT: 3
+  SHUFFLE: 2,
+  LOADING: 3,
+  RESULT: 4,
 };
 
 const SPREAD_OPTIONS = [
@@ -50,6 +51,8 @@ export default function TarotFlow() {
   const [question, setQuestion] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
   const [result, setResult] = useState<DivinationResult | null>(null);
+  const [cutPosition, setCutPosition] = useState<number>(50);
+  const [shuffleTrace, setShuffleTrace] = useState<number[]>([]);
 
   // 始终调用 Hook（符合 React Hooks 规则）
   const polling = useDivinationPolling({
@@ -92,7 +95,14 @@ export default function TarotFlow() {
         question: question,
         version: 'TAROT',
         spread: selectedSpread,
-        orientation: 'E'
+        orientation: 'E',
+        context: {
+          tarot_interaction: {
+            spread: selectedSpread,
+            cut_position: cutPosition,
+            shuffle_trace: shuffleTrace.slice(-20),
+          },
+        },
       });
 
       setSessionId(startRes.data.session_id);
@@ -111,12 +121,16 @@ export default function TarotFlow() {
     setQuestion('');
     setResult(null);
     setSessionId('');
+    setCutPosition(50);
+    setShuffleTrace([]);
   };
 
   const goBackToSpreadSelect = () => {
     setStage(STAGES.SPREAD_SELECT);
     setSelectedSpread('');
     setQuestion('');
+    setCutPosition(50);
+    setShuffleTrace([]);
   };
 
   return (
@@ -219,11 +233,81 @@ export default function TarotFlow() {
               <Button
                 variant="primary"
                 size="lg"
-                onClick={startTarotReading}
+                onClick={() => setStage(STAGES.SHUFFLE)}
                 disabled={!question.trim()}
+                icon={<span>🃏</span>}
+              >
+                开始洗牌
+              </Button>
+            </div>
+          </MobilePage>
+        </motion.div>
+      )}
+
+      {stage === STAGES.SHUFFLE && (
+        <motion.div
+          key="shuffle"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
+          <MobilePage>
+            <div className="tarot-header">
+              <h2 className="tarot-title">🃏 洗牌与切牌</h2>
+              <p className="tarot-subtitle">滑动来感受洗牌的过程，选择一个直觉中的切牌位置</p>
+            </div>
+
+            <div className="tarot-section">
+              <Card variant="glass">
+                <CardContent>
+                  <div className="tarot-shuffle-visual">
+                    <div className="tarot-loading-cards">
+                      <div className="tarot-loading-card">🃏</div>
+                      <div className="tarot-loading-card">🃏</div>
+                      <div className="tarot-loading-card">🃏</div>
+                    </div>
+                    <p className="tarot-shuffle-text">
+                      缓缓滑动下面的滑块，就像你亲手在洗牌、切牌。
+                    </p>
+                  </div>
+
+                  <div className="tarot-shuffle-control">
+                    <label className="tarot-shuffle-label">
+                      切牌位置（{cutPosition}%）
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={cutPosition}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        setCutPosition(value);
+                        setShuffleTrace((prev) =>
+                          [...prev, value].slice(-100)
+                        );
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="tarot-actions">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => setStage(STAGES.QUESTION)}
+              >
+                返回修改问题
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={startTarotReading}
                 icon={<span>🔮</span>}
               >
-                开始占卜
+                抽牌并解读
               </Button>
             </div>
           </MobilePage>
