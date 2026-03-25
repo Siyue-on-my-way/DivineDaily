@@ -1,5 +1,7 @@
 """分享相关路由"""
 
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -7,7 +9,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.models.divination import DivinationSession, DivinationResult
+from app.models.divination import DivinationSession
 from app.models.share import DivinationShare
 from app.repositories.share_repository import ShareRepository
 from app.schemas.share import (
@@ -21,6 +23,21 @@ from app.core.logger import get_logger
 
 router = APIRouter()
 logger = get_logger("share_api")
+
+
+def _build_full_share_url(share_path_or_url: str) -> str:
+    """将数据库中的 share_path（或历史 full url）转换为对外可访问 URL"""
+    if not share_path_or_url:
+        return ""
+
+    # 兼容历史数据：已存全量 URL 时直接返回
+    parsed = urlparse(share_path_or_url)
+    if parsed.scheme and parsed.netloc:
+        return share_path_or_url
+
+    base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:40080').rstrip('/')
+    path = share_path_or_url if share_path_or_url.startswith('/') else f"/{share_path_or_url}"
+    return f"{base_url}{path}"
 
 
 @router.post("/{session_id}/share", response_model=ShareResponse)
@@ -59,18 +76,16 @@ async def create_share(
             detail=f"每个占卜最多只能创建 {max_shares} 个分享链接"
         )
     
-    # 创建分享记录
-    share_url_base = getattr(settings, 'FRONTEND_URL', 'http://localhost:40080')
-    
+    # 创建分享记录（数据库仅保存 path，不保存 base_url，便于迁移）
     share = await share_repo.create_share(
         session_id=session_id,
         share_url="",  # 先创建，后面更新
         expires_days=request.expires_days,
         is_public=request.is_public
     )
-    
-    # 更新完整的分享 URL
-    share.share_url = f"{share_url_base}/share/{share.share_token}"
+
+    # 仅保存 path
+    share.share_url = f"/share/{share.share_token}"
     await db.commit()
     
     logger.info("创建分享成功", extra={
@@ -81,7 +96,7 @@ async def create_share(
     
     return ShareResponse(
         share_token=share.share_token,
-        share_url=share.share_url,
+        share_url=_build_full_share_url(share.share_url),
         created_at=share.created_at,
         expires_at=share.expires_at
     )
@@ -130,17 +145,8 @@ async def get_share_content(
             detail="占卜会话不存在"
         )
     
-    # 获取占卜结果
-    result_query = await db.execute(
-        select(DivinationResult).where(DivinationResult.session_id == share.session_id)
-    )
-    divination_result = result_query.scalar_one_or_none()
-    
-    if not divination_result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="占卜结果不存在"
-        )
+    # 分享内容优先从 session 中读取（兼容旧库缺少 divination_results 字段/列）
+    session_result_data = session.result_data or {}
     
     # 增加浏览次数
     await share_repo.increment_view_count(share_token)
@@ -148,13 +154,13 @@ async def get_share_content(
     
     # 构建响应
     result_data = {
-        "title": divination_result.title,
-        "outcome": divination_result.outcome,
-        "summary": divination_result.summary,
-        "detail": divination_result.detail,
-        "hexagram_info": divination_result.hexagram_info,
-        "cards": divination_result.cards,
-        "daily_fortune": divination_result.daily_fortune
+        "title": session_result_data.get("title"),
+        "outcome": session_result_data.get("outcome"),
+        "summary": session.result_summary or session_result_data.get("summary"),
+        "detail": session.result_detail or session_result_data.get("detail"),
+        "hexagram_info": session_result_data.get("hexagram_info"),
+        "cards": session_result_data.get("cards"),
+        "daily_fortune": session_result_data.get("daily_fortune"),
     }
     
     metadata = {
@@ -269,7 +275,7 @@ async def get_share_stats(
     shares_data = [
         {
             "share_token": s.share_token,
-            "share_url": s.share_url,
+            "share_url": _build_full_share_url(s.share_url),
             "view_count": s.view_count,
             "created_at": s.created_at.isoformat(),
             "expires_at": s.expires_at.isoformat() if s.expires_at else None,

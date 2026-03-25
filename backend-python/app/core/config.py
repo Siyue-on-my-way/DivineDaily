@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     
     # CORS 配置
     CORS_ORIGINS: List[str] = ["*"]
+
+    # 前端公开访问地址（用于生成分享链接）
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:40080")
     
     @property
     def DATABASE_URL(self) -> str:

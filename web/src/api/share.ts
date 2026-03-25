@@ -47,7 +47,7 @@ export const shareApi = {
     options?: { expires_days?: number; is_public?: boolean }
   ): Promise<ShareCreateResponse> => {
     const response = await axiosInstance.post<ShareCreateResponse>(
-      `/divinations/${sessionId}/share`,
+      `/shares/${sessionId}/share`,
       options || {}
     );
     return response.data;
