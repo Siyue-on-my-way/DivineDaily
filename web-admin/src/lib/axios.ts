@@ -75,8 +75,8 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 网络错误 - 自动重试
-    if (!error.response && !originalRequest._retry) {
+    // 网络错误 - 自动重试（可通过 _disableRetry 禁用）
+    if (!error.response && !originalRequest._retry && !(originalRequest as any)._disableRetry) {
       originalRequest._retry = true;
       
       // 等待 1 秒后重试

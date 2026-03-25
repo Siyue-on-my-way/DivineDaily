@@ -8,6 +8,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import json
 import httpx
+import time
 from pathlib import Path
 from app.core.database import get_db
 from app.dependencies import get_current_user
@@ -20,6 +21,41 @@ logger = get_logger("api.admin")
 
 
 router = APIRouter()
+
+
+def _mask_api_key(api_key: Optional[str]) -> str:
+    if not api_key:
+        return "<empty>"
+    if len(api_key) <= 8:
+        return "*" * len(api_key)
+    return f"{api_key[:4]}***{api_key[-4:]}"
+
+
+def _safe_json_dumps(data: Any, max_length: int = 1200) -> str:
+    try:
+        raw = json.dumps(data, ensure_ascii=False)
+    except Exception:
+        raw = str(data)
+    if len(raw) > max_length:
+        return raw[:max_length] + "...<truncated>"
+    return raw
+
+
+def build_chat_completions_url(endpoint: Optional[str], url_type: Optional[str]) -> str:
+    """根据 URL 类型构建最终 chat completions 请求地址"""
+    if not endpoint:
+        raise ValueError("LLM endpoint 未配置")
+
+    normalized = endpoint.strip().rstrip('/')
+
+    # openai 兼容模式：自动补全 /chat/completions
+    if url_type == "openai_compatible":
+        if normalized.endswith("/chat/completions"):
+            return normalized
+        return f"{normalized}/chat/completions"
+
+    # 自定义模式：使用完整 URL
+    return normalized
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
@@ -185,6 +221,11 @@ async def update_llm_config(
         await db.execute(update(LLMConfig).where(LLMConfig.id != config_id).values(is_default=False))
     
     update_data = config_data.dict(exclude_unset=True, exclude={"temperature", "max_tokens", "timeout"})
+
+    # API Key 留空则不更新（避免前端编辑时误清空）
+    if "api_key" in update_data and (update_data["api_key"] is None or update_data["api_key"] == ""):
+        update_data.pop("api_key", None)
+
     for key, value in update_data.items():
         setattr(config, key, value)
     
@@ -283,29 +324,72 @@ async def test_llm_config(
         "temperature": config.extra_config.get("temperature", 0.7) if config.extra_config else 0.7,
         "max_tokens": config.extra_config.get("max_tokens", 1000) if config.extra_config else 1000,
     }
-    
+
     try:
+        target_url = build_chat_completions_url(config.endpoint, config.url_type)
+        request_id = f"llm_test_{config_id}_{int(time.time() * 1000)}"
+        start_time = time.monotonic()
+        logger.info(
+            "LLM测试请求开始 | id=%s | url_type=%s | endpoint=%s | target_url=%s | model=%s | key=%s | payload=%s",
+            request_id,
+            config.url_type,
+            config.endpoint,
+            target_url,
+            config.model_name,
+            _mask_api_key(config.api_key),
+            _safe_json_dumps(request_body),
+        )
+
         async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.post(config.endpoint, headers=headers, json=request_body)
+            response = await client.post(target_url, headers=headers, json=request_body)
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            logger.info(
+                "LLM测试响应完成 | id=%s | status=%s | duration_ms=%s | headers=%s",
+                request_id,
+                response.status_code,
+                duration_ms,
+                _safe_json_dumps(dict(response.headers)),
+            )
             response.raise_for_status()
             result_data = response.json()
+            logger.info(
+                "LLM测试响应内容 | id=%s | body=%s",
+                request_id,
+                _safe_json_dumps(result_data),
+            )
             if "choices" in result_data and len(result_data["choices"]) > 0:
                 llm_response = result_data["choices"][0]["message"]["content"]
             else:
                 llm_response = str(result_data)
-        
+
         return {
             "success": True,
             "message": "测试成功",
-            "request": {"user_message": test_data.message, "model": config.model_name, "endpoint": config.endpoint},
+            "request": {"user_message": test_data.message, "model": config.model_name, "endpoint": config.endpoint, "target_url": target_url},
             "response": llm_response
         }
     except httpx.HTTPError as e:
+        duration_ms = int((time.monotonic() - start_time) * 1000) if 'start_time' in locals() else None
+        status_code = e.response.status_code if getattr(e, "response", None) is not None else None
+        error_body = None
+        if getattr(e, "response", None) is not None:
+            try:
+                error_body = e.response.json()
+            except Exception:
+                error_body = e.response.text
+        logger.info(
+            "LLM测试请求失败 | id=%s | status=%s | duration_ms=%s | error=%s | body=%s",
+            request_id if 'request_id' in locals() else 'n/a',
+            status_code,
+            duration_ms,
+            str(e),
+            _safe_json_dumps(error_body),
+        )
         return {
             "success": False,
             "message": "测试失败",
             "error": str(e),
-            "request": {"user_message": test_data.message, "model": config.model_name, "endpoint": config.endpoint}
+            "request": {"user_message": test_data.message, "model": config.model_name, "endpoint": config.endpoint, "target_url": target_url if 'target_url' in locals() else config.endpoint}
         }
 
 
@@ -321,6 +405,7 @@ async def get_assistant_configs(
     result = await db.execute(
         select(PromptConfig, LLMConfig)
         .outerjoin(LLMConfig, PromptConfig.llm_config_id == LLMConfig.id)
+        .order_by(PromptConfig.id.asc())
     )
     rows = result.all()
     
@@ -521,23 +606,52 @@ async def test_assistant_config(
     
     try:
         headers = {"Content-Type": "application/json"}
-        
+
         if llm_config.api_key:
             if llm_config.provider.lower() == "openai" or llm_config.url_type == "openai_compatible":
                 headers["Authorization"] = f"Bearer {llm_config.api_key}"
-        
+
         request_body = {
             "model": llm_config.model_name,
             "messages": [{"role": "user", "content": rendered_prompt}],
             "temperature": assistant_config.temperature,
             "max_tokens": assistant_config.max_tokens,
         }
-        
+
+        target_url = build_chat_completions_url(llm_config.endpoint, llm_config.url_type)
+        request_id = f"assistant_test_{config_id}_{int(time.time() * 1000)}"
+        start_time = time.monotonic()
+        logger.info(
+            "Assistant测试LLM请求开始 | id=%s | assistant=%s | llm=%s | url_type=%s | endpoint=%s | target_url=%s | model=%s | key=%s | payload=%s",
+            request_id,
+            assistant_config.name,
+            llm_config.name,
+            llm_config.url_type,
+            llm_config.endpoint,
+            target_url,
+            llm_config.model_name,
+            _mask_api_key(llm_config.api_key),
+            _safe_json_dumps(request_body),
+        )
+
         async with httpx.AsyncClient(timeout=assistant_config.timeout_seconds) as client:
-            llm_response = await client.post(llm_config.endpoint, headers=headers, json=request_body)
+            llm_response = await client.post(target_url, headers=headers, json=request_body)
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            logger.info(
+                "Assistant测试LLM响应完成 | id=%s | status=%s | duration_ms=%s | headers=%s",
+                request_id,
+                llm_response.status_code,
+                duration_ms,
+                _safe_json_dumps(dict(llm_response.headers)),
+            )
             llm_response.raise_for_status()
-            
+
             result_data = llm_response.json()
+            logger.info(
+                "Assistant测试LLM响应内容 | id=%s | body=%s",
+                request_id,
+                _safe_json_dumps(result_data),
+            )
             if "choices" in result_data and len(result_data["choices"]) > 0:
                 response = result_data["choices"][0]["message"]["content"]
             else:
@@ -574,6 +688,22 @@ async def test_assistant_config(
         }
         
     except httpx.HTTPError as e:
+        duration_ms = int((time.monotonic() - start_time) * 1000) if 'start_time' in locals() else None
+        status_code = e.response.status_code if getattr(e, "response", None) is not None else None
+        error_body = None
+        if getattr(e, "response", None) is not None:
+            try:
+                error_body = e.response.json()
+            except Exception:
+                error_body = e.response.text
+        logger.info(
+            "Assistant测试LLM请求失败 | id=%s | status=%s | duration_ms=%s | error=%s | body=%s",
+            request_id if 'request_id' in locals() else 'n/a',
+            status_code,
+            duration_ms,
+            str(e),
+            _safe_json_dumps(error_body),
+        )
         return {
             "success": False,
             "error": f"HTTP 请求失败: {str(e)}",

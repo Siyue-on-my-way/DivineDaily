@@ -2,11 +2,28 @@
 
 import httpx
 import json
+import time
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 
 from app.core.logger import get_logger
 logger = get_logger("llm")
+
+
+def _mask_api_key(api_key: Optional[str]) -> str:
+    if not api_key:
+        return "<empty>"
+    if len(api_key) <= 8:
+        return "*" * len(api_key)
+    return f"{api_key[:4]}***{api_key[-4:]}"
+
+
+def _truncate_text(text: Optional[str], max_len: int = 800) -> str:
+    if text is None:
+        return ""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len] + "...<truncated>"
 
 
 
@@ -33,9 +50,27 @@ class LLMService(ABC):
 
 class MockLLMService(LLMService):
     """Mock LLM服务（用于测试和降级）"""
-    
+
     async def generate(self, prompt: str) -> str:
-        return "这是一个测试答案。根据分析，建议您谨慎考虑。"
+        return """## 👋 友好提示
+当前智能解读服务响应较慢，已为您切换到快速回复模式。
+
+## 💡 建议
+请稍后重试，或将问题描述得更具体（例如明确“我该不该做某个选择”），通常可以更快得到完整、准确的占卜解读。"""
+
+
+def build_chat_completions_url(endpoint: str, url_type: Optional[str] = "openai_compatible") -> str:
+    """根据 URL 类型构建最终 chat completions 请求地址"""
+    normalized = endpoint.strip().rstrip('/')
+
+    # openai 兼容模式：自动补全 /chat/completions
+    if url_type == "openai_compatible":
+        if normalized.endswith("/chat/completions"):
+            return normalized
+        return f"{normalized}/chat/completions"
+
+    # 自定义模式：使用完整 URL
+    return normalized
 
 
 class OpenAICompatibleLLMService(LLMService):
@@ -44,7 +79,7 @@ class OpenAICompatibleLLMService(LLMService):
     def __init__(
         self,
         endpoint: str,
-        api_key: str,
+        api_key: Optional[str],
         model_name: str,
         temperature: float = 0.7,
         max_tokens: int = 2000,
@@ -56,42 +91,100 @@ class OpenAICompatibleLLMService(LLMService):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
-        self.client = httpx.AsyncClient(timeout=timeout)
+        # 分离 connect/read 超时，读超时留更大余量，降低误判超时
+        self.http_timeout = httpx.Timeout(connect=10.0, read=float(timeout), write=10.0, pool=10.0)
+        self.client = httpx.AsyncClient(timeout=self.http_timeout)
     
     async def generate(self, prompt: str) -> str:
         """调用LLM生成文本"""
         headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
+            "Content-Type": "application/json"
         }
-        
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
         payload = {
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": self.temperature,
             "max_tokens": self.max_tokens
         }
-        
-        try:
-            response = await self.client.post(
-                self.endpoint,
-                headers=headers,
-                json=payload
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            if "choices" in data and len(data["choices"]) > 0:
-                return data["choices"][0]["message"]["content"]
-            else:
+
+        request_id = f"llm_generate_{int(time.time() * 1000)}"
+        start_time = time.monotonic()
+        logger.info(
+            "LLM请求开始 | id=%s | endpoint=%s | model=%s | temp=%s | max_tokens=%s | key=%s | prompt_preview=%s",
+            request_id,
+            self.endpoint,
+            self.model_name,
+            self.temperature,
+            self.max_tokens,
+            _mask_api_key(self.api_key),
+            _truncate_text(prompt, 300),
+        )
+
+        max_attempts = 2
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = await self.client.post(
+                    self.endpoint,
+                    headers=headers,
+                    json=payload
+                )
+                duration_ms = int((time.monotonic() - start_time) * 1000)
+                logger.info(
+                    "LLM响应完成 | id=%s | attempt=%s/%s | status=%s | duration_ms=%s",
+                    request_id,
+                    attempt,
+                    max_attempts,
+                    response.status_code,
+                    duration_ms,
+                )
+                response.raise_for_status()
+
+                data = response.json()
+                logger.info(
+                    "LLM响应内容 | id=%s | attempt=%s/%s | body_preview=%s",
+                    request_id,
+                    attempt,
+                    max_attempts,
+                    _truncate_text(json.dumps(data, ensure_ascii=False), 1000),
+                )
+                if "choices" in data and len(data["choices"]) > 0:
+                    return data["choices"][0]["message"]["content"]
                 raise ValueError("Invalid response format")
-        
-        except Exception as e:
-            import traceback
-            logger.info(f"LLM调用失败: {type(e).__name__}: {str(e)}")
-            logger.info(f"详细错误:\n{traceback.format_exc()}")
-            # 降级到Mock服务
-            return await MockLLMService().generate(prompt)
+
+            except httpx.ReadTimeout as e:
+                duration_ms = int((time.monotonic() - start_time) * 1000)
+                logger.info(
+                    "LLM读取超时 | id=%s | attempt=%s/%s | duration_ms=%s | timeout=%ss | error=%s",
+                    request_id,
+                    attempt,
+                    max_attempts,
+                    duration_ms,
+                    self.timeout,
+                    str(e),
+                )
+                if attempt == max_attempts:
+                    break
+            except Exception as e:
+                import traceback
+                duration_ms = int((time.monotonic() - start_time) * 1000)
+                logger.info(
+                    "LLM调用失败 | id=%s | attempt=%s/%s | duration_ms=%s | error=%s: %s",
+                    request_id,
+                    attempt,
+                    max_attempts,
+                    duration_ms,
+                    type(e).__name__,
+                    str(e),
+                )
+                logger.info(f"详细错误:\n{traceback.format_exc()}")
+                # 非超时错误不重试，直接降级
+                return await MockLLMService().generate(prompt)
+
+        # 超时重试后仍失败，降级返回友好文案
+        return await MockLLMService().generate(prompt)
     
     async def close(self):
         """关闭HTTP客户端"""
@@ -125,7 +218,12 @@ def create_llm_service(
         return MockLLMService()
     
     # 获取配置参数
-    endpoint = llm_config.endpoint
+    raw_endpoint = llm_config.endpoint
+    if not raw_endpoint:
+        logger.info("LLM endpoint 未配置，使用Mock服务")
+        return MockLLMService()
+
+    endpoint = build_chat_completions_url(raw_endpoint, llm_config.url_type)
     api_key = llm_config.api_key
     model_name = llm_config.model_name
     
