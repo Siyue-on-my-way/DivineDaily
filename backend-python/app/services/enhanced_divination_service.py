@@ -81,8 +81,13 @@ class EnhancedDivinationService(DivinationService):
         else:
             analysis = self.question_analyzer._fallback_analysis(request.question)
         
-        # 智能路由占卜
-        session_id = str(uuid.uuid4())
+        # 智能路由占卜（优先复用外部传入 session_id）
+        session_id = None
+        if getattr(request, 'context', None):
+            session_id = request.context.get('session_id')
+        if not session_id:
+            session_id = str(uuid.uuid4())
+
         try:
             divination_result = await self.router.route_question(
                 session_id=session_id,

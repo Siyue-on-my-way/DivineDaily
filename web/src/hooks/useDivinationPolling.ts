@@ -69,11 +69,27 @@ export const useDivinationPolling = ({
   maxAttempts = 60,
   interval = 1000,
 }: UseDivinationPollingOptions) => {
+  const BACKOFF_STEP_MS = 500;
+  const MAX_INTERVAL_MS = 5000;
   const attemptsRef = useRef(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
   const startTimeRef = useRef<number>(0);
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  const onProgressRef = useRef(onProgress);
+
+  const getNextInterval = useCallback(() => {
+    const backoff = interval + (attemptsRef.current - 1) * BACKOFF_STEP_MS;
+    return Math.min(MAX_INTERVAL_MS, Math.max(interval, backoff));
+  }, [interval]);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+    onProgressRef.current = onProgress;
+  }, [onSuccess, onError, onProgress]);
 
   /**
    * 清理资源（定时器和请求）
@@ -112,7 +128,7 @@ export const useDivinationPolling = ({
         undefined,
         undefined
       );
-      onError(error);
+      onErrorRef.current(error);
       return;
     }
 
@@ -120,8 +136,8 @@ export const useDivinationPolling = ({
 
     // 计算已用时间并触发进度回调
     const elapsed = Date.now() - startTimeRef.current;
-    if (onProgress) {
-      onProgress(elapsed, attemptsRef.current);
+    if (onProgressRef.current) {
+      onProgressRef.current(elapsed, attemptsRef.current);
     }
 
     try {
@@ -133,7 +149,10 @@ export const useDivinationPolling = ({
         `/divinations/${sessionId}`,
         { 
           signal: abortControllerRef.current.signal,
-          timeout: 10000 // 单次请求10秒超时
+          timeout: 10000, // 单次请求10秒超时
+          headers: {
+            'X-Silent-Error': '1',
+          },
         }
       );
 
@@ -142,10 +161,40 @@ export const useDivinationPolling = ({
         return;
       }
 
-      // 成功获取结果
+      // 根据状态判断是否继续轮询
+      const result = response.data;
+      if (result.status === 'processing' || result.status === 'pending') {
+        if (attemptsRef.current < maxAttempts) {
+          timerRef.current = setTimeout(pollResult, getNextInterval());
+        } else {
+          cleanup();
+          const timeoutError = createPollingError(
+            'timeout',
+            '占卜处理超时，请稍后在历史记录中查看结果',
+            undefined,
+            undefined
+          );
+          onErrorRef.current(timeoutError);
+        }
+        return;
+      }
+
+      if (result.status === 'failed') {
+        cleanup();
+        const failedError = createPollingError(
+          'server',
+          result.error_message || result.detail || result.summary || '占卜处理失败，请稍后重试',
+          500,
+          result
+        );
+        onErrorRef.current(failedError);
+        return;
+      }
+
+      // completed 或无状态（兼容老接口）
       cleanup();
-      onSuccess(response.data);
-      
+      onSuccessRef.current(result);
+
     } catch (error: any) {
       if (!isMountedRef.current) {
         cleanup();
@@ -163,7 +212,7 @@ export const useDivinationPolling = ({
       // 404 表示结果还未生成，继续轮询
       if (statusCode === 404) {
         if (attemptsRef.current < maxAttempts) {
-          timerRef.current = setTimeout(pollResult, interval);
+          timerRef.current = setTimeout(pollResult, getNextInterval());
         } else {
           cleanup();
           const timeoutError = createPollingError(
@@ -172,7 +221,7 @@ export const useDivinationPolling = ({
             statusCode,
             error
           );
-          onError(timeoutError);
+          onErrorRef.current(timeoutError);
         }
         return;
       }
@@ -186,7 +235,7 @@ export const useDivinationPolling = ({
           statusCode,
           error
         );
-        onError(serverError);
+        onErrorRef.current(serverError);
         return;
       }
 
@@ -199,7 +248,7 @@ export const useDivinationPolling = ({
           statusCode,
           error
         );
-        onError(authError);
+        onErrorRef.current(authError);
         return;
       }
 
@@ -207,7 +256,7 @@ export const useDivinationPolling = ({
       if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || !statusCode) {
         // 网络错误，继续重试
         if (attemptsRef.current < maxAttempts) {
-          timerRef.current = setTimeout(pollResult, interval);
+          timerRef.current = setTimeout(pollResult, getNextInterval());
         } else {
           cleanup();
           const networkError = createPollingError(
@@ -216,14 +265,14 @@ export const useDivinationPolling = ({
             undefined,
             error
           );
-          onError(networkError);
+          onErrorRef.current(networkError);
         }
         return;
       }
 
       // 其他错误，继续重试
       if (attemptsRef.current < maxAttempts) {
-        timerRef.current = setTimeout(pollResult, interval);
+        timerRef.current = setTimeout(pollResult, getNextInterval());
       } else {
         cleanup();
         const unknownError = createPollingError(
@@ -232,10 +281,10 @@ export const useDivinationPolling = ({
           statusCode,
           error
         );
-        onError(unknownError);
+        onErrorRef.current(unknownError);
       }
     }
-  }, [sessionId, maxAttempts, interval, onSuccess, onError, onProgress, cleanup]);
+  }, [sessionId, maxAttempts, cleanup, getNextInterval]);
 
   useEffect(() => {
     // 如果没有 sessionId，不启动轮询

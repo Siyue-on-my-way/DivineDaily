@@ -1,81 +1,164 @@
-"""占卜相关路由 - 同步模式"""
+"""占卜相关路由 - 异步任务模式"""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import json
+from datetime import datetime, timezone
+from typing import Optional, Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from app.core.database import get_db
+
+from app.core.database import get_db, async_session_maker
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.divination import DivinationSession
-from app.schemas.divination import CreateDivinationRequest, DivinationResult
+from app.schemas.divination import CreateDivinationRequest, DivinationResult, DivinationTaskAccepted
 from app.services.enhanced_divination_service import EnhancedDivinationService
 from app.services.llm_service import create_llm_service
 from app.repositories.llm_repository import LLMRepository
 from app.repositories.divination_repository import DivinationRepository
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.core.logger import get_logger
-from datetime import datetime
-from typing import Optional
 
 router = APIRouter()
 logger = get_logger("api")
 
 
-@router.post("/start", response_model=DivinationResult)
+def _sanitize_result_for_json(value: Any) -> Any:
+    """兜底 JSON 安全转换，避免不可序列化对象导致任务失败"""
+    encoded = jsonable_encoder(value)
+    try:
+        # 二次保障：确认可被标准 JSON 序列化
+        json.dumps(encoded)
+        return encoded
+    except TypeError:
+        if isinstance(encoded, dict):
+            sanitized: dict[str, Any] = {}
+            for k, v in encoded.items():
+                try:
+                    json.dumps(v)
+                    sanitized[k] = v
+                except TypeError:
+                    sanitized[k] = str(v)
+            sanitized.setdefault("serialization_warning", "部分字段不可序列化，已降级为字符串")
+            return sanitized
+        return str(encoded)
+
+
+async def _run_divination_task(session_id: str, request: CreateDivinationRequest):
+    """后台执行占卜任务并回写 session 结果"""
+    async with async_session_maker() as task_db:
+        llm_service = None
+        try:
+            llm_repo = LLMRepository(task_db)
+            llm_config = await llm_repo.get_default()
+
+            if llm_config and llm_config.is_enabled:
+                try:
+                    llm_service = create_llm_service(llm_config)
+                    logger.info("后台任务使用 LLM", extra={"session_id": session_id, "llm_name": llm_config.name})
+                except Exception:
+                    logger.warning("后台任务创建 LLM 服务失败", exc_info=True, extra={"session_id": session_id})
+            else:
+                logger.warning("后台任务未配置可用的 LLM，将使用基础占卜服务", extra={"session_id": session_id})
+
+            service = EnhancedDivinationService(task_db, llm_service)
+            result = await service.start_divination_with_enhancement(request)
+            serializable_result = _sanitize_result_for_json(result)
+
+            # 回写到预创建 session（避免内部新建 session_id 与外部不一致）
+            session = await task_db.get(DivinationSession, session_id)
+            if session:
+                session.status = "completed"
+                session.result_summary = serializable_result.get("summary")
+                session.result_detail = serializable_result.get("detail")
+                session.result_data = serializable_result
+                await task_db.commit()
+                logger.info("后台占卜任务完成", extra={"session_id": session_id})
+            else:
+                await task_db.rollback()
+                logger.error("后台占卜任务回写失败：session 不存在", extra={"session_id": session_id})
+
+        except Exception as e:
+            await task_db.rollback()
+            logger.error("后台占卜任务失败", exc_info=True, extra={"session_id": session_id, "error": str(e)})
+
+            # 标记为 failed，便于前端轮询结束
+            try:
+                failed_session = await task_db.get(DivinationSession, session_id)
+                if failed_session:
+                    failed_session.status = "failed"
+                    failed_session.result_summary = "占卜处理失败，请稍后重试"
+                    failed_session.result_detail = str(e)
+                    failed_session.result_data = {
+                        "error_code": "DIVINATION_TASK_FAILED",
+                        "error_message": str(e),
+                        "retryable": True,
+                    }
+                    await task_db.commit()
+            except Exception:
+                await task_db.rollback()
+                logger.error("后台占卜任务失败状态回写失败", exc_info=True, extra={"session_id": session_id})
+        finally:
+            if llm_service and hasattr(llm_service, "close"):
+                await llm_service.close()
+
+
+@router.post("/start", response_model=DivinationTaskAccepted)
 async def start_divination(
     request: CreateDivinationRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    开始占卜（同步模式）
-    
-    前端发起请求后，后端完整执行占卜流程（包括 LLM 增强），
-    然后返回完整结果。前端在此期间保持等待状态。
-    
-    预计响应时间：
-    - 基础占卜：< 1 秒
-    - 带 LLM 增强：10-40 秒
+    开始占卜（异步任务模式）
+
+    提交请求后立即返回 session_id 和 processing 状态，
+    占卜与 LLM 增强在后台执行。
     """
-    # 确保 user_id 与当前登录用户一致
     request.user_id = str(current_user.id)
-    
+
     try:
-        # 获取默认 LLM 配置
-        llm_repo = LLMRepository(db)
-        llm_config = await llm_repo.get_default()
-        
-        llm_service = None
-        if llm_config and llm_config.is_enabled:
-            try:
-                llm_service = create_llm_service(llm_config)
-                logger.info("使用 LLM", extra={"llm_name": llm_config.name})
-            except Exception as e:
-                logger.warning("创建 LLM 服务失败", exc_info=True)
-                # 降级：不使用 LLM
-        else:
-            logger.warning("未配置可用的 LLM，将使用基础占卜服务")
-        
-        # 使用增强占卜服务（同步执行，等待完成）
-        service = EnhancedDivinationService(db, llm_service)
-        result = await service.start_divination_with_enhancement(request)
-        
-        # 提交数据库事务
-        await db.commit()
-        
-        # 关闭 LLM 连接
-        if llm_service and hasattr(llm_service, 'close'):
-            await llm_service.close()
-        
-        # 返回完整结果
-        return result
-        
+        session_id = request.context.get("session_id") if request.context else None
+        if not session_id:
+            import uuid
+            session_id = str(uuid.uuid4())
+
+        # 预创建 session，立即返回，避免网关超时
+        session = DivinationSession(
+            id=session_id,
+            user_id=request.user_id,
+            version=request.version,
+            question=request.question,
+            event_type=request.event_type or "general",
+            orientation=request.orientation,
+            spread=request.spread,
+            intent=request.intent,
+            status="processing",
+        )
+        db.add(session)
+        await db.flush()
+
+        # 将 session_id 注入 context，后台任务可对齐写回
+        merged_context = request.context or {}
+        merged_context["session_id"] = session_id
+        request.context = merged_context
+
+        background_tasks.add_task(_run_divination_task, session_id, request)
+
+        return DivinationTaskAccepted(
+            accepted=True,
+            session_id=session_id,
+            status="processing",
+            status_url=f"/api/v1/divinations/{session_id}",
+            message="占卜任务已受理，正在处理中",
+            created_at=datetime.now(timezone.utc),
+        )
     except Exception as e:
         await db.rollback()
-        logger.error("占卜失败", exc_info=True)
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"占卜失败: {str(e)}")
+        logger.error("创建占卜任务失败", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"创建占卜任务失败: {str(e)}")
 
 
 @router.get("/history")
@@ -94,11 +177,11 @@ async def list_divination_history(
 ):
     """
     获取占卜历史（增强版）
-    
+
     支持过滤和排序：
     - event_type: 事件类型（decision/career/relationship/fortune/knowledge）
     - version: 版本（CN/Global/TAROT）
-    - status: 状态（pending/completed/failed）
+    - status: 状态（processing/completed/failed）
     - start_date: 开始日期（YYYY-MM-DD）
     - end_date: 结束日期（YYYY-MM-DD）
     - order_by: 排序字段（created_at/updated_at）
@@ -106,7 +189,7 @@ async def list_divination_history(
     """
     try:
         repo = DivinationRepository(db)
-        
+
         # 解析日期
         start_dt = None
         end_dt = None
@@ -115,16 +198,14 @@ async def list_divination_history(
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid start_date format, use YYYY-MM-DD")
-        
+
         if end_date:
             try:
                 end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-                # 设置为当天的23:59:59
                 end_dt = end_dt.replace(hour=23, minute=59, second=59)
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid end_date format, use YYYY-MM-DD")
-        
-        # 获取历史记录
+
         sessions = await repo.get_user_sessions_with_filters(
             user_id=str(current_user.id),
             limit=limit,
@@ -135,25 +216,24 @@ async def list_divination_history(
             start_date=start_dt,
             end_date=end_dt,
             order_by=order_by,
-            order_direction=order_direction
+            order_direction=order_direction,
         )
-        
-        # 获取总数
+
         total_count = await repo.count_user_sessions_with_filters(
             user_id=str(current_user.id),
             event_type=event_type,
             version=version,
             status=status,
             start_date=start_dt,
-            end_date=end_dt
+            end_date=end_dt,
         )
-        
+
         return {
             "sessions": sessions,
             "total": total_count,
             "limit": limit,
             "offset": offset,
-            "has_more": (offset + limit) < total_count
+            "has_more": (offset + limit) < total_count,
         }
     except HTTPException:
         raise
@@ -171,15 +251,10 @@ async def get_history_count(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    获取占卜历史记录总数
-    
-    支持过滤条件，与 /history 接口的过滤参数一致
-    """
+    """获取占卜历史记录总数"""
     try:
         repo = DivinationRepository(db)
-        
-        # 解析日期
+
         start_dt = None
         end_dt = None
         if start_date:
@@ -187,24 +262,23 @@ async def get_history_count(
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid start_date format, use YYYY-MM-DD")
-        
+
         if end_date:
             try:
                 end_dt = datetime.strptime(end_date, "%Y-%m-%d")
                 end_dt = end_dt.replace(hour=23, minute=59, second=59)
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid end_date format, use YYYY-MM-DD")
-        
-        # 获取总数
+
         count = await repo.count_user_sessions_with_filters(
             user_id=str(current_user.id),
             event_type=event_type,
             version=version,
             status=status,
             start_date=start_dt,
-            end_date=end_dt
+            end_date=end_dt,
         )
-        
+
         return {"count": count}
     except HTTPException:
         raise
@@ -217,15 +291,7 @@ async def get_divination_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    获取用户占卜统计数据（增强版）
-    
-    返回：
-    - total_count: 总占卜次数
-    - by_type: 按事件类型统计
-    - by_version: 按版本统计
-    - by_status: 按状态统计
-    """
+    """获取用户占卜统计数据（增强版）"""
     try:
         repo = DivinationRepository(db)
         stats = await repo.get_user_stats(str(current_user.id))
@@ -234,34 +300,32 @@ async def get_divination_stats(
         raise HTTPException(status_code=500, detail=f"获取统计失败: {str(e)}")
 
 
-# 通配路由必须放在最后，否则会拦截所有请求
 @router.get("/{session_id}", response_model=DivinationResult)
 async def get_divination_result(
     session_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取占卜结果"""
+    """获取占卜结果（兼容 processing/completed/failed）"""
     llm_repo = LLMRepository(db)
     llm_config = await llm_repo.get_default()
-    
+
     llm_service = None
     if llm_config and llm_config.is_enabled:
         try:
             llm_service = create_llm_service(llm_config)
-        except:
+        except Exception:
             pass
-    
+
     service = EnhancedDivinationService(db, llm_service)
     try:
         result = await service.get_result(session_id)
-        
-        if llm_service and hasattr(llm_service, 'close'):
+
+        if llm_service and hasattr(llm_service, "close"):
             await llm_service.close()
-        
+
         return result
-    except (BadRequestError, NotFoundError):
-        # 直接重新抛出 HTTP 异常，保持原有状态码
+    except NotFoundError:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取占卜结果失败: {str(e)}")

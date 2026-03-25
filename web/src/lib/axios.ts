@@ -38,6 +38,12 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+const isSilentErrorRequest = (config?: InternalAxiosRequestConfig): boolean => {
+  if (!config?.headers) return false;
+  const value = config.headers['X-Silent-Error'] as string | undefined;
+  return value === '1';
+};
+
 // 响应拦截器
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -61,17 +67,21 @@ axiosInstance.interceptors.response.use(
 
     // 403 无权限
     if (error.response?.status === 403) {
-      window.dispatchEvent(new CustomEvent('toast:error', {
-        detail: { message: '您没有权限执行此操作' }
-      }));
+      if (!isSilentErrorRequest(originalRequest)) {
+        window.dispatchEvent(new CustomEvent('toast:error', {
+          detail: { message: '您没有权限执行此操作' }
+        }));
+      }
       return Promise.reject(error);
     }
 
     // 500 服务器错误
     if (error.response?.status === 500) {
-      window.dispatchEvent(new CustomEvent('toast:error', {
-        detail: { message: '服务器错误，请稍后重试' }
-      }));
+      if (!isSilentErrorRequest(originalRequest)) {
+        window.dispatchEvent(new CustomEvent('toast:error', {
+          detail: { message: '服务器错误，请稍后重试' }
+        }));
+      }
       return Promise.reject(error);
     }
 
@@ -85,9 +95,11 @@ axiosInstance.interceptors.response.use(
       try {
         return await axiosInstance(originalRequest);
       } catch (retryError) {
-        window.dispatchEvent(new CustomEvent('toast:error', {
-          detail: { message: '网络连接失败，请检查网络设置' }
-        }));
+        if (!isSilentErrorRequest(originalRequest)) {
+          window.dispatchEvent(new CustomEvent('toast:error', {
+            detail: { message: '网络连接失败，请检查网络设置' }
+          }));
+        }
         return Promise.reject(retryError);
       }
     }

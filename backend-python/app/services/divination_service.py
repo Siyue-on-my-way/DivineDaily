@@ -108,17 +108,15 @@ class DivinationService:
         if not session:
             raise NotFoundError(detail="占卜会话不存在")
         
-        # 如果状态为 failed，抛出错误
-        if session.status == "failed":
-            raise BadRequestError(detail="占卜失败")
-        
-        # processing 和 completed 状态都返回结果
-        
+        # processing/completed/failed 状态都返回结构化结果
         result_data = session.result_data or {}
         
         return DivinationResult(
             session_id=session.id,
             status=session.status,  # 添加 status 字段
+            error_code=result_data.get('error_code'),
+            error_message=result_data.get('error_message') or result_data.get('error'),
+            retryable=result_data.get('retryable'),
             outcome=result_data.get('outcome'),
             title=result_data.get('title'),
             spread=result_data.get('spread'),

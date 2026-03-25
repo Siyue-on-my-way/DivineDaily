@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MobilePage } from '../mobile';
 import { Button } from '../mobile/Button';
@@ -31,22 +31,90 @@ export default function RitualFlow() {
   const [question, setQuestion] = useState('');
   const [sessionId, setSessionId] = useState<string>('');
   const [result, setResult] = useState<DivinationResult | null>(null);
+  const [pollingElapsed, setPollingElapsed] = useState(0);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const POLLING_MAX_ATTEMPTS = 60;
+  const DURATION_HISTORY_KEY = 'divination_duration_history_buckets_v1';
+  const DURATION_HISTORY_LIMIT = 8;
+
+  const inferQuestionBucket = (text: string): string => {
+    const q = text.toLowerCase();
+    if (/恋爱|感情|婚姻|对象|分手|relationship/.test(q)) return 'relationship';
+    if (/工作|事业|升职|跳槽|职场|career/.test(q)) return 'career';
+    if (/运势|财运|今日|明天|fortune/.test(q)) return 'fortune';
+    if (/知识|是什么|为什么|原理|knowledge/.test(q)) return 'knowledge';
+    return 'general';
+  };
+
+  const activeQuestionBucket = useMemo(() => inferQuestionBucket(question), [question]);
+
+  const estimatedRemainingSeconds = useMemo(() => {
+    if (pollingElapsed <= 0) return undefined;
+
+    try {
+      const raw = localStorage.getItem(DURATION_HISTORY_KEY);
+      if (!raw) return undefined;
+
+      const bucketMap = JSON.parse(raw) as Record<string, number[]>;
+      if (!bucketMap || typeof bucketMap !== 'object') return undefined;
+
+      const bucketHistory = bucketMap[activeQuestionBucket] || [];
+      const fallbackHistory = bucketMap.general || [];
+      const historySource = bucketHistory.length > 0 ? bucketHistory : fallbackHistory;
+
+      const valid = historySource.filter((v) => Number.isFinite(v) && v > 0);
+      if (valid.length === 0) return undefined;
+
+      const averageMs = valid.reduce((sum, v) => sum + v, 0) / valid.length;
+      const remainMs = Math.max(0, averageMs - pollingElapsed);
+      return Math.ceil(remainMs / 1000);
+    } catch {
+      return undefined;
+    }
+  }, [pollingElapsed, activeQuestionBucket]);
 
   // 始终调用 Hook（符合 React Hooks 规则），通过空 sessionId 来控制是否执行轮询
   const polling = useDivinationPolling({
     sessionId: sessionId,
     onSuccess: (data) => {
+      try {
+        if (pollingElapsed > 0) {
+          const raw = localStorage.getItem(DURATION_HISTORY_KEY);
+          const bucketMap = raw ? (JSON.parse(raw) as Record<string, number[]>) : {};
+          const safeBucketMap = bucketMap && typeof bucketMap === 'object' ? bucketMap : {};
+
+          const currentBucketHistory = Array.isArray(safeBucketMap[activeQuestionBucket])
+            ? safeBucketMap[activeQuestionBucket].filter((v) => Number.isFinite(v) && v > 0)
+            : [];
+
+          const nextBucketHistory = [...currentBucketHistory, pollingElapsed].slice(-DURATION_HISTORY_LIMIT);
+
+          safeBucketMap[activeQuestionBucket] = nextBucketHistory;
+          localStorage.setItem(DURATION_HISTORY_KEY, JSON.stringify(safeBucketMap));
+        }
+      } catch {
+        // 忽略本地存储异常，不影响主流程
+      }
+
       setResult(data);
       setStage(STAGES.RESULT);
       setSessionId('');
+      setPollingElapsed(0);
+      setPollingAttempts(0);
     },
     onError: (error) => {
       console.error('Divination polling failed', error);
       setStage(STAGES.QUESTION);
       setSessionId('');
+      setPollingElapsed(0);
+      setPollingAttempts(0);
       toast.error(error.message || '占卜失败，请重试');
     },
-    maxAttempts: 60,
+    onProgress: (elapsed, attempts) => {
+      setPollingElapsed(elapsed);
+      setPollingAttempts(attempts);
+    },
+    maxAttempts: POLLING_MAX_ATTEMPTS,
     interval: 1000,
   });
 
@@ -76,18 +144,13 @@ export default function RitualFlow() {
         orientation: 'E'
       });
 
-      const sessionIdFromResponse = startRes.data.session_id || startRes.data.id;
-      
+      const sessionIdFromResponse = startRes.data.session_id;
+
       if (!sessionIdFromResponse) {
-        // 直接返回结果的情况（低质量问题）
-        if (startRes.data.summary && startRes.data.detail) {
-          setResult(startRes.data);
-          setStage(STAGES.RESULT);
-          return;
-        }
         throw new Error('未获取到有效的会话ID');
       }
-      
+
+      // 异步任务模式：提交后立即进入轮询
       setSessionId(sessionIdFromResponse);
       
     } catch (err: any) {
@@ -118,6 +181,8 @@ export default function RitualFlow() {
     setQuestion('');
     setResult(null);
     setSessionId('');
+    setPollingElapsed(0);
+    setPollingAttempts(0);
   };
 
   /**
@@ -127,6 +192,8 @@ export default function RitualFlow() {
     polling.cancel();
     setStage(STAGES.QUESTION);
     setSessionId('');
+    setPollingElapsed(0);
+    setPollingAttempts(0);
     toast.info('已取消占卜');
   };
 
@@ -196,7 +263,13 @@ export default function RitualFlow() {
       )}
 
       {stage === STAGES.LOADING && (
-        <DivinationLoading onCancel={handleCancelLoading} />
+        <DivinationLoading
+          onCancel={handleCancelLoading}
+          pollingElapsedMs={pollingElapsed}
+          pollingAttempts={pollingAttempts}
+          pollingMaxAttempts={POLLING_MAX_ATTEMPTS}
+          estimatedRemainingSeconds={estimatedRemainingSeconds}
+        />
       )}
 
       {stage === STAGES.RESULT && result && (
