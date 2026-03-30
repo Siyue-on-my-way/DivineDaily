@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { getAuthToken, clearAuthToken } from './AuthContext';
+import { getAuthToken, getRefreshToken, getTokenType, setAuthToken, setRefreshToken, setTokenType, clearAuthToken } from './AuthContext';
+import { authApi } from '../api/auth';
 
 // 创建 axios 实例
 const axiosInstance: AxiosInstance = axios.create({
@@ -16,7 +17,11 @@ axiosInstance.interceptors.request.use(
     // 自动注入 Authorization Token
     const token = getAuthToken();
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      const tokenType = getTokenType();
+      const headerValue = tokenType
+        ? `${tokenType.toLowerCase() === 'bearer' ? 'Bearer' : tokenType} ${token}`
+        : `Bearer ${token}`;
+      config.headers.Authorization = headerValue;
     }
 
     // 添加请求 ID 用于追踪
@@ -38,6 +43,14 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+let isRefreshing = false;
+let refreshQueue: Array<(token: string | null) => void> = [];
+
+const resolveRefreshQueue = (token: string | null) => {
+  refreshQueue.forEach((callback) => callback(token));
+  refreshQueue = [];
+};
+
 // 响应拦截器
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -46,17 +59,77 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // 401 未授权 - 跳转登录
+    // 401 未授权 - 尝试刷新 token
     if (error.response?.status === 401) {
-      clearAuthToken();
-      
-      // 避免在登录页面重复跳转
-      if (!window.location.pathname.includes('/login')) {
-        // 触发全局登录弹窗
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      if (originalRequest._retry) {
+        clearAuthToken();
+        if (!window.location.pathname.includes('/login')) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
+        return Promise.reject(error);
       }
-      
-      return Promise.reject(error);
+
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        clearAuthToken();
+        if (!window.location.pathname.includes('/login')) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
+        return Promise.reject(error);
+      }
+
+      originalRequest._retry = true;
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          refreshQueue.push((token) => {
+            if (!token) {
+              reject(error);
+              return;
+            }
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            resolve(axiosInstance(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const response = await authApi.refreshToken(refreshToken);
+        const tokenType = (response.token_type || 'bearer').toLowerCase();
+        const authHeader = `${tokenType === 'bearer' ? 'Bearer' : response.token_type} ${response.token}`.trim();
+        setAuthToken(response.token);
+        if (response.token_type) {
+          setTokenType(response.token_type);
+        }
+        if (response.refresh_token) {
+          setRefreshToken(response.refresh_token);
+        }
+        resolveRefreshQueue(response.token);
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = authHeader;
+        }
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        resolveRefreshQueue(null);
+        clearAuthToken();
+        const expiredMessage = '登录已过期，请重新登录';
+        window.dispatchEvent(new CustomEvent('toast:error', {
+          detail: { message: expiredMessage }
+        }));
+        window.dispatchEvent(new CustomEvent('auth:expired', {
+          detail: { message: expiredMessage }
+        }));
+        if (!window.location.pathname.includes('/login')) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
     // 403 无权限

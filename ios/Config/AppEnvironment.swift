@@ -32,4 +32,12 @@ final class AppEnvironment {
     func makeShareService(onUnauthorized: (() -> Void)? = nil) -> ShareService {
         ShareService(client: makeHTTPClient(onUnauthorized: onUnauthorized))
     }
+
+    func makeFeedbackService(onUnauthorized: (() -> Void)? = nil) -> FeedbackService {
+        FeedbackService(client: makeHTTPClient(onUnauthorized: onUnauthorized))
+    }
+
+    func makeSaveService(onUnauthorized: (() -> Void)? = nil) -> SaveService {
+        SaveService(client: makeHTTPClient(onUnauthorized: onUnauthorized))
+    }
 }

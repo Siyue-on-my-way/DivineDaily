@@ -2,9 +2,15 @@ import axiosInstance from '../lib/axios';
 import type { DivinationResult, DivinationSession } from '../types/divination';
 
 export interface DivinationHistoryParams {
-  page?: number;
   limit?: number;
-  user_id?: string;
+  offset?: number;
+  event_type?: string;
+  version?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  order_by?: string;
+  order_direction?: string;
 }
 
 export interface DivinationHistoryResponse {
@@ -17,8 +23,9 @@ export interface DivinationHistoryResponse {
 
 export interface DivinationStatsResponse {
   total_count: number;
-  saved_count: number;
-  shared_count: number;
+  by_type: Record<string, number>;
+  by_version: Record<string, number>;
+  by_status: Record<string, number>;
 }
 
 // 占卜 API
@@ -33,7 +40,7 @@ export const divinationApi = {
 
   // 获取单个占卜详情
   getDetail: async (sessionId: string): Promise<DivinationResult> => {
-    const response = await axiosInstance.get<DivinationResult>(`/divinations/${sessionId}/result`);
+    const response = await axiosInstance.get<DivinationResult>(`/divinations/${sessionId}`);
     return response.data;
   },
 

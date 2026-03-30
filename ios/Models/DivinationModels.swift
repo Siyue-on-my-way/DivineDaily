@@ -34,6 +34,7 @@ struct DivinationResultDTO: Decodable {
     let cards: [TarotCardDTO]?
     let daily_fortune: DailyFortuneEmbeddedDTO?
     let quality: DivinationQualityDTO?
+    let yarrow_trace: YarrowProcessTraceDTO?
 }
 
 struct DailyFortuneEmbeddedDTO: Decodable {
@@ -92,6 +93,7 @@ struct DivinationResult: Equatable {
     let cards: [TarotCard]
     let dailyFortune: DailyFortuneEmbedded?
     let quality: DivinationQuality?
+    let yarrowTrace: YarrowProcessTrace?
 
     init(dto: DivinationResultDTO) {
         self.sessionId = dto.session_id
@@ -107,6 +109,7 @@ struct DivinationResult: Equatable {
         self.cards = (dto.cards ?? []).map(TarotCard.init)
         self.dailyFortune = dto.daily_fortune.map(DailyFortuneEmbedded.init)
         self.quality = dto.quality.map(DivinationQuality.init)
+        self.yarrowTrace = dto.yarrow_trace.map(YarrowProcessTrace.init)
     }
 }
 
@@ -191,5 +194,95 @@ struct TarotCard: Equatable {
         self.position = dto.position ?? ""
         self.isReversed = dto.is_reversed ?? false
         self.meaning = dto.meaning ?? ""
+    }
+}
+
+struct YarrowProcessTraceDTO: Decodable {
+    let method: String?
+    let total_stalks: Int?
+    let effective_stalks: Int?
+    let lines: [YarrowLineTraceDTO]?
+}
+
+struct YarrowLineTraceDTO: Decodable {
+    let line_index: Int?
+    let initial_stalks: Int?
+    let changes: [YarrowChangeStepDTO]?
+    let final_stalks: Int?
+    let line_value: Int?
+    let line_type: String?
+    let is_changing: Bool?
+}
+
+struct YarrowChangeStepDTO: Decodable {
+    let step_index: Int?
+    let stalks_before: Int?
+    let left_pile: Int?
+    let right_pile_before_hang: Int?
+    let right_hang_one: Int?
+    let right_pile_after_hang: Int?
+    let left_remainder: Int?
+    let right_remainder: Int?
+    let removed: Int?
+    let stalks_after: Int?
+}
+
+struct YarrowProcessTrace: Equatable {
+    let method: String
+    let totalStalks: Int
+    let effectiveStalks: Int
+    let lines: [YarrowLineTrace]
+
+    init(dto: YarrowProcessTraceDTO) {
+        self.method = dto.method ?? ""
+        self.totalStalks = dto.total_stalks ?? 0
+        self.effectiveStalks = dto.effective_stalks ?? 0
+        self.lines = (dto.lines ?? []).map(YarrowLineTrace.init)
+    }
+}
+
+struct YarrowLineTrace: Equatable {
+    let lineIndex: Int
+    let initialStalks: Int
+    let changes: [YarrowChangeStep]
+    let finalStalks: Int
+    let lineValue: Int
+    let lineType: String
+    let isChanging: Bool
+
+    init(dto: YarrowLineTraceDTO) {
+        self.lineIndex = dto.line_index ?? 0
+        self.initialStalks = dto.initial_stalks ?? 0
+        self.changes = (dto.changes ?? []).map(YarrowChangeStep.init)
+        self.finalStalks = dto.final_stalks ?? 0
+        self.lineValue = dto.line_value ?? 0
+        self.lineType = dto.line_type ?? ""
+        self.isChanging = dto.is_changing ?? false
+    }
+}
+
+struct YarrowChangeStep: Equatable {
+    let stepIndex: Int
+    let stalksBefore: Int
+    let leftPile: Int
+    let rightPileBeforeHang: Int
+    let rightHangOne: Int
+    let rightPileAfterHang: Int
+    let leftRemainder: Int
+    let rightRemainder: Int
+    let removed: Int
+    let stalksAfter: Int
+
+    init(dto: YarrowChangeStepDTO) {
+        self.stepIndex = dto.step_index ?? 0
+        self.stalksBefore = dto.stalks_before ?? 0
+        self.leftPile = dto.left_pile ?? 0
+        self.rightPileBeforeHang = dto.right_pile_before_hang ?? 0
+        self.rightHangOne = dto.right_hang_one ?? 0
+        self.rightPileAfterHang = dto.right_pile_after_hang ?? 0
+        self.leftRemainder = dto.left_remainder ?? 0
+        self.rightRemainder = dto.right_remainder ?? 0
+        self.removed = dto.removed ?? 0
+        self.stalksAfter = dto.stalks_after ?? 0
     }
 }

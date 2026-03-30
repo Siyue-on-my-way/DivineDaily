@@ -116,15 +116,16 @@ struct HistoryView: View {
 
 struct HistoryDetailView: View {
     @StateObject private var store: HistoryDetailStore
-    @StateObject private var shareStore: ShareStore
-    @State private var shareExpiresDays: Int = 7
-    @State private var shareIsPublic: Bool = true
+    @State private var showFeedback = false
+    @State private var shareLinkItem: ShareLinkItem?
+
+    let authStore: AuthStore
     let item: DivinationHistoryItem
 
     init(authStore: AuthStore, item: DivinationHistoryItem) {
+        self.authStore = authStore
         self.item = item
         _store = StateObject(wrappedValue: HistoryDetailStore(authStore: authStore))
-        _shareStore = StateObject(wrappedValue: ShareStore(authStore: authStore))
     }
 
     var body: some View {
@@ -156,14 +157,14 @@ struct HistoryDetailView: View {
 
                     if !result.summary.isEmpty {
                         GroupBox("摘要") {
-                            Text(result.summary)
+                            MarkdownText(result.summary, fallback: "暂无摘要")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
 
                     if !result.detail.isEmpty {
                         GroupBox("详细解读") {
-                            Text(result.detail)
+                            MarkdownText(result.detail, fallback: "暂无详情")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
@@ -263,36 +264,37 @@ struct HistoryDetailView: View {
                     }
                 }
 
-                GroupBox("分享") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Stepper("有效期：\(shareExpiresDays) 天", value: $shareExpiresDays, in: 1...30)
-                        Toggle("公开分享", isOn: $shareIsPublic)
-
-                        Button("创建分享") {
-                            Task {
-                                await shareStore.createShare(
-                                    sessionId: item.id,
-                                    expiresDays: shareExpiresDays,
-                                    isPublic: shareIsPublic
-                                )
+                DivinationActionBar(
+                    onSave: {
+                        Task { await store.saveResult(sessionId: item.id) }
+                    },
+                    onShare: {
+                        Task {
+                            await store.createShare(sessionId: item.id)
+                            if let url = store.shareURL, let item = ShareLinkItem(urlString: url) {
+                                shareLinkItem = item
                             }
                         }
-                        .buttonStyle(.borderedProminent)
+                    },
+                    isSaving: store.isSaving,
+                    isSharing: store.isSharing
+                )
 
-                        if let url = shareStore.generatedURL {
-                            Text(url)
-                                .font(.footnote)
-                                .textSelection(.enabled)
-                            ShareLink(item: url) {
-                                Label("系统分享", systemImage: "square.and.arrow.up")
-                            }
-                        }
-
-                        if let shareError = shareStore.errorMessage {
-                            CommonErrorBanner(message: shareError)
-                        }
+                if let shareLinkItem {
+                    ShareLink(item: shareLinkItem.url) {
+                        Label("系统分享", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .buttonStyle(.bordered)
+                }
+
+                Button("评价这次占卜") {
+                    showFeedback = true
+                }
+                .buttonStyle(.bordered)
+
+                if let error = store.errorMessage {
+                    CommonErrorBanner(message: error)
                 }
 
                 Text("时间：\(item.createdAt)")
@@ -302,6 +304,9 @@ struct HistoryDetailView: View {
             .padding(16)
         }
         .navigationTitle("记录详情")
+        .sheet(isPresented: $showFeedback) {
+            FeedbackSheet(authStore: authStore, sessionId: item.id)
+        }
         .task {
             await store.load(sessionId: item.id)
         }

@@ -1,0 +1,531 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0927B66D11C16E8013C7D8DA /* ShareModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A799674E4367A1B6BB79332E /* ShareModels.swift */; };
+		0D7B83EDFCECA08BED7684D9 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7A096BC3AB980984FC0E29 /* ProfileModels.swift */; };
+		148F6548D7FA7FAEBD179CB7 /* DivineDailyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E341DFE1E6C082072ED28EB /* DivineDailyApp.swift */; };
+		187ED3DA9F446170C6ADBEB4 /* DivinationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CF8866F9010E9AD43F0339 /* DivinationService.swift */; };
+		19F38EE05418F7443EA5ADEA /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A273FF938EDEFC0E4D3FB49 /* AuthModels.swift */; };
+		1DC272064D71F0A9C9AB2535 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED6AEF515C84C8F71AF52DE /* HTTPClient.swift */; };
+		1E331B58F6618EF7963C9D5A /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F7A1487A50E9A77D401F07 /* ShareService.swift */; };
+		246534DC6D149555839885C2 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E4C804D7330ACB60B464F9 /* HistoryStore.swift */; };
+		2E7E9BF59A817EB8935B84F8 /* SessionSelectorSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A314093EBB93BD0C867392 /* SessionSelectorSection.swift */; };
+		3648CBC853FD54F8F980FA6B /* HistoryDetailStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40AAB1DBA39A4363E5A11806 /* HistoryDetailStore.swift */; };
+		437497F55EC5ABE5932837A9 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90215B78796E3E0415AF532 /* AppConfig.swift */; };
+		43ED27EC82B42043B780551A /* DivinationPollingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43919A84257DC9406D0F6875 /* DivinationPollingHelper.swift */; };
+		4427DEA161F1C04817F312AB /* FortuneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6910AAD53AFDE5A9F24914F /* FortuneView.swift */; };
+		4795F4868C6D55693158CA6C /* FortuneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3202C3E6FC2C5AB2FF2239C3 /* FortuneStore.swift */; };
+		4CC18768D3896AFEE10BFEF6 /* FortuneModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A082D16539E961182B2EF1 /* FortuneModels.swift */; };
+		563640C0189CF70629CF421D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD36037ADA471745FA68EEE /* HomeView.swift */; };
+		60C4BE1D4E41E08992B4DE24 /* ShareStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72EB5B184B65E1EC8562AEE /* ShareStore.swift */; };
+		669652C26662F30BAE295D7D /* ProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E4EA6A259E727D84D6CECC /* ProfileStore.swift */; };
+		6CD9B5F1EC4CBB806BA15D27 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F67268EB28A7D3E731D6D55 /* APIError.swift */; };
+		75308C19EDCD9447437EC839 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418B43FC56394B5FD827E65E /* HistoryView.swift */; };
+		75A4A327D582B941477FE5D7 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6E51B7C8AB7522B6237721 /* AuthService.swift */; };
+		781CF02D436929F94F22BE10 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1071921F34A8C6557BC155E6 /* AppEnvironment.swift */; };
+		7E51D51DFD1F21504D2B3F9D /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DCFADE442368BE08E48634 /* TokenStore.swift */; };
+		A72F2FAEF1B8F4CB394BC045 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7447BE062F19D48D6C4AC4 /* ProfileView.swift */; };
+		A99010B5B647537DF813D6DB /* DivinationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4711FB008844800FAD4D81D7 /* DivinationModels.swift */; };
+		AD056078025511903A0465B2 /* AuthGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C5E69B54683D5615FDFB49 /* AuthGateView.swift */; };
+		B5EBC74AEE030BDD1C8343CF /* TarotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83357B60252C2E446197D779 /* TarotStore.swift */; };
+		B66ACE213419ED9A3C78F5B8 /* AuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D7C1B5145BEF38CFE65229 /* AuthStore.swift */; };
+		B6812449660DE3B369288413 /* IChingDivinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A9D88E5F909F6318EB58614 /* IChingDivinationView.swift */; };
+		B7DE196C0E6E448323BAD432 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5DA27C25C7C896B6A310D1 /* LoginView.swift */; };
+		BCB96693F8D4CBF8CC59A055 /* DivinationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BCA55C58C3B8112AB84143D /* DivinationStore.swift */; };
+		C21D27E2D85BB8E82F32B43C /* FortuneService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9774C11F7FB05AC9A2727F /* FortuneService.swift */; };
+		C3FF6756D15AEEB9A62C3FAA /* DateTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3234209F2211E739F4BF546 /* DateTextFormatter.swift */; };
+		C9FE7C354B4103FD2C223B89 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148870BE9E86D0370EB549FF /* RegisterView.swift */; };
+		D1B7A5BD0536163CD066589F /* HistoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B2D10AAB933CC2BBCA5E62 /* HistoryModels.swift */; };
+		EDC1DABF6872B9143A6F525E /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB3F9DDA5C675ECAB6D1F5F /* ShareView.swift */; };
+		F1578E445A9EE29F68533D14 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1463C3A90C5FF90BBD8EDE30 /* ProfileService.swift */; };
+		F1B8EEF9B839894AAE900AE1 /* TarotFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160A2B068437EF0A1D050E05 /* TarotFlowView.swift */; };
+		F1C82D3861144ECC8C8CE3A7 /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399AD9B86CC494A93A799292 /* AppUser.swift */; };
+		F6242DD9B5546EA544913AB0 /* CommonErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B32D3D1091A9C4C9B713D9 /* CommonErrorBanner.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		01CF8866F9010E9AD43F0339 /* DivinationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivinationService.swift; sourceTree = "<group>"; };
+		08B2D10AAB933CC2BBCA5E62 /* HistoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryModels.swift; sourceTree = "<group>"; };
+		09A082D16539E961182B2EF1 /* FortuneModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneModels.swift; sourceTree = "<group>"; };
+		0A5DA27C25C7C896B6A310D1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		0C7447BE062F19D48D6C4AC4 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		1071921F34A8C6557BC155E6 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		1463C3A90C5FF90BBD8EDE30 /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
+		148870BE9E86D0370EB549FF /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		160A2B068437EF0A1D050E05 /* TarotFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TarotFlowView.swift; sourceTree = "<group>"; };
+		18C5E69B54683D5615FDFB49 /* AuthGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthGateView.swift; sourceTree = "<group>"; };
+		1A9D88E5F909F6318EB58614 /* IChingDivinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IChingDivinationView.swift; sourceTree = "<group>"; };
+		1F67268EB28A7D3E731D6D55 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		28F7A1487A50E9A77D401F07 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
+		3202C3E6FC2C5AB2FF2239C3 /* FortuneStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneStore.swift; sourceTree = "<group>"; };
+		399AD9B86CC494A93A799292 /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
+		3AD36037ADA471745FA68EEE /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		40AAB1DBA39A4363E5A11806 /* HistoryDetailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryDetailStore.swift; sourceTree = "<group>"; };
+		418B43FC56394B5FD827E65E /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		43919A84257DC9406D0F6875 /* DivinationPollingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivinationPollingHelper.swift; sourceTree = "<group>"; };
+		4711FB008844800FAD4D81D7 /* DivinationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivinationModels.swift; sourceTree = "<group>"; };
+		52ED4241B0E5AED6C218F803 /* DivineDaily.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DivineDaily.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		58B32D3D1091A9C4C9B713D9 /* CommonErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonErrorBanner.swift; sourceTree = "<group>"; };
+		5A273FF938EDEFC0E4D3FB49 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		5E341DFE1E6C082072ED28EB /* DivineDailyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivineDailyApp.swift; sourceTree = "<group>"; };
+		67D7C1B5145BEF38CFE65229 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
+		7F9774C11F7FB05AC9A2727F /* FortuneService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneService.swift; sourceTree = "<group>"; };
+		83357B60252C2E446197D779 /* TarotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TarotStore.swift; sourceTree = "<group>"; };
+		85E4EA6A259E727D84D6CECC /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
+		89DCFADE442368BE08E48634 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		9BCA55C58C3B8112AB84143D /* DivinationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivinationStore.swift; sourceTree = "<group>"; };
+		A799674E4367A1B6BB79332E /* ShareModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareModels.swift; sourceTree = "<group>"; };
+		B90215B78796E3E0415AF532 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		BBB3F9DDA5C675ECAB6D1F5F /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
+		C7A314093EBB93BD0C867392 /* SessionSelectorSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSelectorSection.swift; sourceTree = "<group>"; };
+		CB6E51B7C8AB7522B6237721 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		CE7A096BC3AB980984FC0E29 /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
+		CED6AEF515C84C8F71AF52DE /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
+		D3234209F2211E739F4BF546 /* DateTextFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTextFormatter.swift; sourceTree = "<group>"; };
+		D72EB5B184B65E1EC8562AEE /* ShareStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareStore.swift; sourceTree = "<group>"; };
+		E4E4C804D7330ACB60B464F9 /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
+		E6910AAD53AFDE5A9F24914F /* FortuneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0F524D6EB5F62FB93D482C8D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				52ED4241B0E5AED6C218F803 /* DivineDaily.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		10FB304A0DA5D7B65DBF174F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CB6E51B7C8AB7522B6237721 /* AuthService.swift */,
+				01CF8866F9010E9AD43F0339 /* DivinationService.swift */,
+				7F9774C11F7FB05AC9A2727F /* FortuneService.swift */,
+				1463C3A90C5FF90BBD8EDE30 /* ProfileService.swift */,
+				28F7A1487A50E9A77D401F07 /* ShareService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		11A16EA9160762AC16D34521 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				89DCFADE442368BE08E48634 /* TokenStore.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		1D22ECF4D01F806CD504F0C8 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				D3234209F2211E739F4BF546 /* DateTextFormatter.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		212DB2F6500BC5249EED184A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				18C5E69B54683D5615FDFB49 /* AuthGateView.swift */,
+				58B32D3D1091A9C4C9B713D9 /* CommonErrorBanner.swift */,
+				E6910AAD53AFDE5A9F24914F /* FortuneView.swift */,
+				418B43FC56394B5FD827E65E /* HistoryView.swift */,
+				3AD36037ADA471745FA68EEE /* HomeView.swift */,
+				1A9D88E5F909F6318EB58614 /* IChingDivinationView.swift */,
+				0A5DA27C25C7C896B6A310D1 /* LoginView.swift */,
+				0C7447BE062F19D48D6C4AC4 /* ProfileView.swift */,
+				148870BE9E86D0370EB549FF /* RegisterView.swift */,
+				C7A314093EBB93BD0C867392 /* SessionSelectorSection.swift */,
+				BBB3F9DDA5C675ECAB6D1F5F /* ShareView.swift */,
+				160A2B068437EF0A1D050E05 /* TarotFlowView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		5AFA0D3145A56B9E63F59F44 /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				67D7C1B5145BEF38CFE65229 /* AuthStore.swift */,
+				43919A84257DC9406D0F6875 /* DivinationPollingHelper.swift */,
+				9BCA55C58C3B8112AB84143D /* DivinationStore.swift */,
+				3202C3E6FC2C5AB2FF2239C3 /* FortuneStore.swift */,
+				40AAB1DBA39A4363E5A11806 /* HistoryDetailStore.swift */,
+				E4E4C804D7330ACB60B464F9 /* HistoryStore.swift */,
+				85E4EA6A259E727D84D6CECC /* ProfileStore.swift */,
+				D72EB5B184B65E1EC8562AEE /* ShareStore.swift */,
+				83357B60252C2E446197D779 /* TarotStore.swift */,
+			);
+			path = Stores;
+			sourceTree = "<group>";
+		};
+		71272ACE0C8CFAC4BFBCCD5E /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				5E341DFE1E6C082072ED28EB /* DivineDailyApp.swift */,
+				D8D49CD28B1A2781C544E2E4 /* Config */,
+				F3C4356EF50DE2ABF083DCEE /* Models */,
+				9E9DFD068D45630B304A3389 /* Networking */,
+				10FB304A0DA5D7B65DBF174F /* Services */,
+				11A16EA9160762AC16D34521 /* Storage */,
+				5AFA0D3145A56B9E63F59F44 /* Stores */,
+				1D22ECF4D01F806CD504F0C8 /* Utils */,
+				212DB2F6500BC5249EED184A /* Views */,
+			);
+			name = ios;
+			path = .;
+			sourceTree = "<group>";
+		};
+		7F3A2B92A5230268750C19EC = {
+			isa = PBXGroup;
+			children = (
+				D8D49CD28B1A2781C544E2E4 /* Config */,
+				71272ACE0C8CFAC4BFBCCD5E /* ios */,
+				F3C4356EF50DE2ABF083DCEE /* Models */,
+				9E9DFD068D45630B304A3389 /* Networking */,
+				10FB304A0DA5D7B65DBF174F /* Services */,
+				11A16EA9160762AC16D34521 /* Storage */,
+				5AFA0D3145A56B9E63F59F44 /* Stores */,
+				1D22ECF4D01F806CD504F0C8 /* Utils */,
+				212DB2F6500BC5249EED184A /* Views */,
+				0F524D6EB5F62FB93D482C8D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9E9DFD068D45630B304A3389 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				1F67268EB28A7D3E731D6D55 /* APIError.swift */,
+				CED6AEF515C84C8F71AF52DE /* HTTPClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		D8D49CD28B1A2781C544E2E4 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				B90215B78796E3E0415AF532 /* AppConfig.swift */,
+				1071921F34A8C6557BC155E6 /* AppEnvironment.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		F3C4356EF50DE2ABF083DCEE /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				399AD9B86CC494A93A799292 /* AppUser.swift */,
+				5A273FF938EDEFC0E4D3FB49 /* AuthModels.swift */,
+				4711FB008844800FAD4D81D7 /* DivinationModels.swift */,
+				09A082D16539E961182B2EF1 /* FortuneModels.swift */,
+				08B2D10AAB933CC2BBCA5E62 /* HistoryModels.swift */,
+				CE7A096BC3AB980984FC0E29 /* ProfileModels.swift */,
+				A799674E4367A1B6BB79332E /* ShareModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D7529798BEE7FE7FD7A8EC81 /* DivineDaily */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1343912CCE5F8C6A44AA482F /* Build configuration list for PBXNativeTarget "DivineDaily" */;
+			buildPhases = (
+				4BB055530C7781DA46F4801A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DivineDaily;
+			packageProductDependencies = (
+			);
+			productName = DivineDaily;
+			productReference = 52ED4241B0E5AED6C218F803 /* DivineDaily.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E1A2DFF42D7311862EA289A4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					D7529798BEE7FE7FD7A8EC81 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E85D47FFED38CD1DC830DA52 /* Build configuration list for PBXProject "DivineDaily" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7F3A2B92A5230268750C19EC;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 54;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D7529798BEE7FE7FD7A8EC81 /* DivineDaily */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4BB055530C7781DA46F4801A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6CD9B5F1EC4CBB806BA15D27 /* APIError.swift in Sources */,
+				437497F55EC5ABE5932837A9 /* AppConfig.swift in Sources */,
+				781CF02D436929F94F22BE10 /* AppEnvironment.swift in Sources */,
+				F1C82D3861144ECC8C8CE3A7 /* AppUser.swift in Sources */,
+				AD056078025511903A0465B2 /* AuthGateView.swift in Sources */,
+				19F38EE05418F7443EA5ADEA /* AuthModels.swift in Sources */,
+				75A4A327D582B941477FE5D7 /* AuthService.swift in Sources */,
+				B66ACE213419ED9A3C78F5B8 /* AuthStore.swift in Sources */,
+				F6242DD9B5546EA544913AB0 /* CommonErrorBanner.swift in Sources */,
+				C3FF6756D15AEEB9A62C3FAA /* DateTextFormatter.swift in Sources */,
+				A99010B5B647537DF813D6DB /* DivinationModels.swift in Sources */,
+				43ED27EC82B42043B780551A /* DivinationPollingHelper.swift in Sources */,
+				187ED3DA9F446170C6ADBEB4 /* DivinationService.swift in Sources */,
+				BCB96693F8D4CBF8CC59A055 /* DivinationStore.swift in Sources */,
+				148F6548D7FA7FAEBD179CB7 /* DivineDailyApp.swift in Sources */,
+				4CC18768D3896AFEE10BFEF6 /* FortuneModels.swift in Sources */,
+				C21D27E2D85BB8E82F32B43C /* FortuneService.swift in Sources */,
+				4795F4868C6D55693158CA6C /* FortuneStore.swift in Sources */,
+				4427DEA161F1C04817F312AB /* FortuneView.swift in Sources */,
+				1DC272064D71F0A9C9AB2535 /* HTTPClient.swift in Sources */,
+				3648CBC853FD54F8F980FA6B /* HistoryDetailStore.swift in Sources */,
+				D1B7A5BD0536163CD066589F /* HistoryModels.swift in Sources */,
+				246534DC6D149555839885C2 /* HistoryStore.swift in Sources */,
+				75308C19EDCD9447437EC839 /* HistoryView.swift in Sources */,
+				563640C0189CF70629CF421D /* HomeView.swift in Sources */,
+				B6812449660DE3B369288413 /* IChingDivinationView.swift in Sources */,
+				B7DE196C0E6E448323BAD432 /* LoginView.swift in Sources */,
+				0D7B83EDFCECA08BED7684D9 /* ProfileModels.swift in Sources */,
+				F1578E445A9EE29F68533D14 /* ProfileService.swift in Sources */,
+				669652C26662F30BAE295D7D /* ProfileStore.swift in Sources */,
+				A72F2FAEF1B8F4CB394BC045 /* ProfileView.swift in Sources */,
+				C9FE7C354B4103FD2C223B89 /* RegisterView.swift in Sources */,
+				2E7E9BF59A817EB8935B84F8 /* SessionSelectorSection.swift in Sources */,
+				0927B66D11C16E8013C7D8DA /* ShareModels.swift in Sources */,
+				1E331B58F6618EF7963C9D5A /* ShareService.swift in Sources */,
+				60C4BE1D4E41E08992B4DE24 /* ShareStore.swift in Sources */,
+				EDC1DABF6872B9143A6F525E /* ShareView.swift in Sources */,
+				F1B8EEF9B839894AAE900AE1 /* TarotFlowView.swift in Sources */,
+				B5EBC74AEE030BDD1C8343CF /* TarotStore.swift in Sources */,
+				7E51D51DFD1F21504D2B3F9D /* TokenStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3845FC293C169226D7842AF1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = DivineDaily/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.divinedaily.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				UIUserInterfaceStyle = Automatic;
+			};
+			name = Release;
+		};
+		44EFA34CEADDC55C76A995A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = DivineDaily/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.divinedaily.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				UIUserInterfaceStyle = Automatic;
+			};
+			name = Debug;
+		};
+		727B966D4746D57C4A0C2139 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = DivineDaily/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.divinedaily.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B34FADEF0964590CBC106BA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = DivineDaily/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.divinedaily.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1343912CCE5F8C6A44AA482F /* Build configuration list for PBXNativeTarget "DivineDaily" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				727B966D4746D57C4A0C2139 /* Debug */,
+				B34FADEF0964590CBC106BA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E85D47FFED38CD1DC830DA52 /* Build configuration list for PBXProject "DivineDaily" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				44EFA34CEADDC55C76A995A8 /* Debug */,
+				3845FC293C169226D7842AF1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E1A2DFF42D7311862EA289A4 /* Project object */;
+}

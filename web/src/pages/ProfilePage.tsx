@@ -13,8 +13,9 @@ export default function ProfilePage() {
   const { isAuthenticated, user, logout, setShowLoginModal } = useAuth();
   const [stats, setStats] = useState({
     total_count: 0,
-    saved_count: 0,
-    shared_count: 0,
+    by_type: {} as Record<string, number>,
+    by_version: {} as Record<string, number>,
+    by_status: {} as Record<string, number>,
   });
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -33,7 +34,12 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const data = await divinationApi.getStats(user.id);
-      setStats(data);
+      setStats({
+        total_count: data.total_count,
+        by_type: data.by_type || {},
+        by_version: data.by_version || {},
+        by_status: data.by_status || {},
+      });
     } catch (error) {
       console.error('Failed to load stats', error);
       toast.error('加载统计数据失败');
@@ -134,9 +140,9 @@ export default function ProfilePage() {
                         {profile.birth_date}
                         {profile.birth_time && ` ${profile.birth_time}`}
                       </span>
-                      {profile.lunar_month_cn && profile.lunar_day_cn && (
+                      {profile.lunar_birth && (
                         <span className="profile-lunar-info">
-                          农历 {profile.lunar_month_cn}{profile.lunar_day_cn}
+                          农历 {profile.lunar_birth}
                         </span>
                       )}
                     </div>
@@ -165,12 +171,12 @@ export default function ProfilePage() {
                   <div className="profile-stat-label">占卜次数</div>
                 </div>
                 <div className="profile-stat-item">
-                  <div className="profile-stat-value">{stats.saved_count}</div>
-                  <div className="profile-stat-label">收藏</div>
+                  <div className="profile-stat-value">{stats.by_status.completed || 0}</div>
+                  <div className="profile-stat-label">已完成</div>
                 </div>
                 <div className="profile-stat-item">
-                  <div className="profile-stat-value">{stats.shared_count}</div>
-                  <div className="profile-stat-label">分享</div>
+                  <div className="profile-stat-value">{stats.by_status.pending || 0}</div>
+                  <div className="profile-stat-label">进行中</div>
                 </div>
               </div>
             </CardContent>

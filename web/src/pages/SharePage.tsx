@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { QRCodeCanvas } from 'qrcode.react';
 import { shareApi, ShareContent } from '../api/share';
 import { ShareSEO } from '../components/share/ShareSEO';
 import { MobilePage } from '../components/mobile';
@@ -17,6 +18,9 @@ export default function SharePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [showManualCopy, setShowManualCopy] = useState(false);
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!shareToken) {
@@ -25,6 +29,7 @@ export default function SharePage() {
       return;
     }
 
+    setShareUrl(window.location.href);
     loadShareContent();
   }, [shareToken]);
 
@@ -34,6 +39,7 @@ export default function SharePage() {
       const data = await shareApi.getShareContent(shareToken!);
       setContent(data);
       setError(null);
+      shareApi.recordView(shareToken!).catch(() => undefined);
     } catch (err: any) {
       console.error('加载分享内容失败', err);
       
@@ -61,6 +67,122 @@ export default function SharePage() {
     navigate('/divination');
   };
 
+  const handleRetryLoad = () => {
+    if (!shareToken) return;
+    setError(null);
+    loadShareContent();
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const urlToCopy = shareUrl || window.location.href;
+      await navigator.clipboard.writeText(urlToCopy);
+      setShowManualCopy(false);
+      window.dispatchEvent(new CustomEvent('toast:success', {
+        detail: { message: '链接已复制' }
+      }));
+    } catch (error) {
+      console.error('复制链接失败', error);
+      setShowManualCopy(true);
+      window.dispatchEvent(new CustomEvent('toast:error', {
+        detail: { message: '复制失败，请手动复制链接' }
+      }));
+    }
+  };
+
+  const handleCopyInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    event.currentTarget.select();
+  };
+
+  const handleGeneratePoster = () => {
+    if (!content) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = 1080;
+    const height = 1920;
+    canvas.width = width;
+    canvas.height = height;
+
+    const background = ctx.createLinearGradient(0, 0, width, height);
+    background.addColorStop(0, '#667eea');
+    background.addColorStop(1, '#764ba2');
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 64px "PingFang SC", sans-serif';
+    ctx.fillText('DivineDaily', 80, 140);
+
+    ctx.font = '36px "PingFang SC", sans-serif';
+    ctx.fillText('每日一卦，洞察人生', 80, 200);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px "PingFang SC", sans-serif';
+    ctx.fillText('占卜问题', 80, 320);
+
+    ctx.font = '36px "PingFang SC", sans-serif';
+    const question = content.question || '';
+    wrapText(ctx, question, 80, 390, width - 160, 52);
+
+    ctx.font = 'bold 48px "PingFang SC", sans-serif';
+    ctx.fillText('结果摘要', 80, 620);
+
+    ctx.font = '34px "PingFang SC", sans-serif';
+    const summary = content.result.summary || content.result.detail || '';
+    wrapText(ctx, summary, 80, 690, width - 160, 48);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '32px "PingFang SC", sans-serif';
+    ctx.fillText('扫码查看完整解读', 80, height - 260);
+
+    const qrCanvas = document.querySelector('.share-actions-qr canvas') as HTMLCanvasElement | null;
+    if (qrCanvas) {
+      ctx.drawImage(qrCanvas, width - 320, height - 420, 240, 240);
+    }
+
+    const dataUrl = canvas.toDataURL('image/png');
+    setPosterUrl(dataUrl);
+  };
+
+  const handleDownloadPoster = () => {
+    if (!posterUrl) return;
+    const link = document.createElement('a');
+    link.href = posterUrl;
+    link.download = `divinedaily-share-${shareToken || 'result'}.png`;
+    link.click();
+  };
+
+  const wrapText = (
+    context: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number
+  ) => {
+    const words = text.split('');
+    let line = '';
+    let offsetY = y;
+
+    for (let i = 0; i < words.length; i += 1) {
+      const testLine = line + words[i];
+      const metrics = context.measureText(testLine);
+      if (metrics.width > maxWidth && line !== '') {
+        context.fillText(line, x, offsetY);
+        line = words[i];
+        offsetY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      context.fillText(line, x, offsetY);
+    }
+  };
+
   if (loading) {
     return (
       <div className="share-page">
@@ -79,9 +201,17 @@ export default function SharePage() {
           <div className="share-error-icon">😔</div>
           <h2>无法加载分享内容</h2>
           <p>{error || '未知错误'}</p>
-          <Button variant="primary" onClick={handleTryDivination}>
-            去占卜
-          </Button>
+          <div className="share-error-actions">
+            <Button variant="secondary" onClick={handleRetryLoad}>
+              重新加载
+            </Button>
+            <Button variant="primary" onClick={handleTryDivination}>
+              去占卜
+            </Button>
+          </div>
+          {shareToken && (
+            <p className="share-error-token">分享编号：{shareToken}</p>
+          )}
         </div>
       </div>
     );
@@ -93,7 +223,7 @@ export default function SharePage() {
       {content && (
         <ShareSEO
           title={content.result.title || '占卜结果'}
-          description={`问题：${content.question} - ${content.result.summary.substring(0, 150)}...`}
+          description={`问题：${content.question} - ${(content.result.summary || content.result.detail || '').substring(0, 150)}${(content.result.summary || content.result.detail || '').length > 150 ? '...' : ''}`}
           url={window.location.href}
         />
       )}
@@ -207,6 +337,60 @@ export default function SharePage() {
               </Card>
             </motion.div>
           )}
+
+          {/* Share Actions */}
+          <motion.div
+            className="share-actions"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <Card>
+              <CardContent>
+                <div className="share-actions-content">
+                  <h3 className="share-actions-title">分享这个结果</h3>
+                  <p className="share-actions-text">复制链接发送给朋友，或继续体验你的占卜</p>
+                  <div className="share-actions-grid">
+                    <div className="share-actions-qr">
+                      <QRCodeCanvas value={shareUrl || window.location.href} size={140} />
+                      <span>扫码查看</span>
+                    </div>
+                    <div className="share-actions-buttons">
+                      <Button variant="secondary" onClick={handleCopyLink}>
+                        复制链接
+                      </Button>
+                      {showManualCopy && (
+                        <div className="share-actions-manual">
+                          <input
+                            className="share-actions-input"
+                            value={shareUrl || window.location.href}
+                            readOnly
+                            onFocus={handleCopyInputFocus}
+                            onClick={handleCopyInputFocus}
+                          />
+                          <span>请手动复制链接</span>
+                        </div>
+                      )}
+                      <Button variant="secondary" onClick={handleGeneratePoster}>
+                        生成分享海报
+                      </Button>
+                      <Button variant="primary" onClick={handleTryDivination}>
+                        立即体验
+                      </Button>
+                    </div>
+                  </div>
+                  {posterUrl && (
+                    <div className="share-actions-poster">
+                      <img src={posterUrl} alt="分享海报" />
+                      <Button variant="outline" onClick={handleDownloadPoster}>
+                        下载海报
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* CTA Section */}
           <motion.div

@@ -29,12 +29,12 @@ export default function HomePage() {
     try {
       // 并行加载每日运势和最近占卜
       const [fortuneData, historyData] = await Promise.all([
-        fortuneApi.getDaily({ user_id: user.id }).catch(() => null),
-        divinationApi.getHistory({ user_id: user.id, limit: 2 }).catch(() => []),
+        fortuneApi.getDaily().catch(() => null),
+        divinationApi.getHistory({ limit: 2, offset: 0 }).catch(() => []),
       ]);
       
       setFortune(fortuneData);
-      setRecentDivinations(Array.isArray(historyData) ? historyData : []);
+      setRecentDivinations(Array.isArray(historyData) ? historyData.sessions : []);
     } catch (error) {
       console.error('Failed to load home data', error);
     } finally {
@@ -62,7 +62,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="home-welcome-stars">
-            {fortune ? getStarRating(fortune.score) : '⭐⭐⭐⭐☆'}
+            {fortune ? getStarRating(fortune.overall_score) : '⭐⭐⭐⭐☆'}
           </div>
         </div>
       </Card>
@@ -122,23 +122,23 @@ export default function HomePage() {
               <div className="home-fortune-grid">
                 <div className="home-fortune-item">
                   <span className="home-fortune-label">财运</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.score)}</span>
+                  <span className="home-fortune-stars">{getStarRating(fortune.wealth_score)}</span>
                 </div>
                 <div className="home-fortune-item">
                   <span className="home-fortune-label">事业</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.score)}</span>
+                  <span className="home-fortune-stars">{getStarRating(fortune.career_score)}</span>
                 </div>
                 <div className="home-fortune-item">
                   <span className="home-fortune-label">感情</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.score)}</span>
+                  <span className="home-fortune-stars">{getStarRating(fortune.love_score)}</span>
                 </div>
                 <div className="home-fortune-item">
                   <span className="home-fortune-label">健康</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.score)}</span>
+                  <span className="home-fortune-stars">{getStarRating(fortune.health_score)}</span>
                 </div>
               </div>
               <p style={{ marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                {fortune.summary}
+                {fortune.content}
               </p>
             </CardContent>
           </Card>

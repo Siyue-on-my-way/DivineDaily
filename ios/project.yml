@@ -1,0 +1,39 @@
+name: 每日一卦
+options:
+  bundleIdPrefix: com.yourcompany
+  deploymentTarget:
+    iOS: 15.0
+  xcodeVersion: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: 5.9
+    DEVELOPMENT_TEAM: ""
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 1.0.0
+    INFOPLIST_FILE: 每日一卦/Info.plist
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    UIUserInterfaceStyle: Automatic
+    ENABLE_PREVIEWS: YES
+    CODE_SIGN_STYLE: Automatic
+    PRODUCT_BUNDLE_IDENTIFIER: com.yourcompany.divinedaily
+packages: {}
+
+targets:
+  每日一卦:
+    type: application
+    platform: iOS
+    sources:
+      - path: .
+        includes:
+          - "**/*.swift"
+        excludes:
+          - "**/*.xcodeproj"
+          - "**/*.xcworkspace"
+          - "**/build/**"
+          - "project.yml"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yourcompany.divinedaily
+    scheme:
+      testTargets: []
+      gatherCoverageData: false

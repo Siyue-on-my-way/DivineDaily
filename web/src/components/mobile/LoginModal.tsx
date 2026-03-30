@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/AuthContext';
 import { Button } from './Button';
@@ -7,11 +7,14 @@ import './LoginModal.css';
 
 export default function LoginModal() {
   const navigate = useNavigate();
-  const { showLoginModal, setShowLoginModal, login } = useAuth();
+  const { showLoginModal, setShowLoginModal, login, authExpired, setAuthExpired, authExpiredMessage } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState(0);
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   if (!showLoginModal) return null;
 
@@ -22,6 +25,7 @@ export default function LoginModal() {
 
     try {
       await login(username, password);
+      setAuthExpired(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败');
     } finally {
@@ -31,6 +35,7 @@ export default function LoginModal() {
 
   const handleClose = () => {
     setShowLoginModal(false);
+    setAuthExpired(false);
     setUsername('');
     setPassword('');
     setError('');
@@ -40,6 +45,57 @@ export default function LoginModal() {
     handleClose();
     navigate('/register');
   };
+
+  const handleRetryLogin = () => {
+    setAuthExpired(false);
+    setError('');
+    if (username) {
+      passwordRef.current?.focus();
+    } else {
+      usernameRef.current?.focus();
+    }
+  };
+
+  useEffect(() => {
+    if (!showLoginModal) {
+      setRetryCountdown(0);
+      return;
+    }
+
+    if (!authExpired) {
+      setRetryCountdown(0);
+      if (username) {
+        passwordRef.current?.focus();
+      } else {
+        usernameRef.current?.focus();
+      }
+      return;
+    }
+
+    setRetryCountdown(5);
+  }, [showLoginModal, authExpired, username]);
+
+  useEffect(() => {
+    if (!authExpired || retryCountdown <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRetryCountdown((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [authExpired, retryCountdown]);
+
+  useEffect(() => {
+    if (authExpired && retryCountdown === 0) {
+      if (username) {
+        passwordRef.current?.focus();
+      } else {
+        usernameRef.current?.focus();
+      }
+    }
+  }, [authExpired, retryCountdown, username]);
 
   return (
     <div className="login-modal-overlay" onClick={handleClose}>
@@ -52,21 +108,38 @@ export default function LoginModal() {
         </div>
 
         <form onSubmit={handleLogin} className="login-modal-form">
+          {authExpired && (
+            <div className="login-modal-error">
+              <div>{authExpiredMessage || '登录已过期，请重新登录'}</div>
+              <button
+                type="button"
+                className="login-modal-retry"
+                onClick={handleRetryLogin}
+                disabled={retryCountdown > 0}
+              >
+                {retryCountdown > 0 ? `重新登录 (${retryCountdown}s)` : '重新登录'}
+              </button>
+            </div>
+          )}
           <Input
+            ref={usernameRef}
             label="用户名"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="请输入用户名/邮箱/手机号"
+            autoComplete="username"
             required
           />
 
           <Input
+            ref={passwordRef}
             label="密码"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="请输入密码"
+            autoComplete="current-password"
             required
           />
 

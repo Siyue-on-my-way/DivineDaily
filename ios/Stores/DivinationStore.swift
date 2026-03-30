@@ -6,14 +6,25 @@ final class DivinationStore: ObservableObject {
     @Published var isLoading = false
     @Published var result: DivinationResult?
     @Published var errorMessage: String?
+    @Published var isSaving = false
+    @Published var isSharing = false
+    @Published var shareURL: String?
 
     private let authStore: AuthStore
     private let service: DivinationService
+    private let shareService: ShareService
+    private let saveService: SaveService
     private var pollingTask: Task<Void, Never>?
 
     init(authStore: AuthStore) {
         self.authStore = authStore
         self.service = AppEnvironment.shared.makeDivinationService { [weak authStore] in
+            Task { @MainActor in authStore?.logout() }
+        }
+        self.shareService = AppEnvironment.shared.makeShareService { [weak authStore] in
+            Task { @MainActor in authStore?.logout() }
+        }
+        self.saveService = AppEnvironment.shared.makeSaveService { [weak authStore] in
             Task { @MainActor in authStore?.logout() }
         }
     }
@@ -62,6 +73,45 @@ final class DivinationStore: ObservableObject {
         result = nil
         errorMessage = nil
         isLoading = false
+        isSaving = false
+        isSharing = false
+        shareURL = nil
+    }
+
+    func createShare() async {
+        guard let sessionId = result?.sessionId, !sessionId.isEmpty else {
+            errorMessage = "无有效占卜记录"
+            return
+        }
+
+        isSharing = true
+        errorMessage = nil
+        shareURL = nil
+        defer { isSharing = false }
+
+        do {
+            let response = try await shareService.createShare(sessionId: sessionId, expiresDays: 30, isPublic: true)
+            shareURL = response.url
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? "创建分享失败"
+        }
+    }
+
+    func saveResult() async {
+        guard let sessionId = result?.sessionId, !sessionId.isEmpty else {
+            errorMessage = "无有效占卜记录"
+            return
+        }
+
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
+
+        do {
+            try await saveService.save(sessionId: sessionId)
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? "保存失败"
+        }
     }
 
     private func startPolling(sessionId: String) {

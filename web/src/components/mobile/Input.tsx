@@ -9,7 +9,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   label,
   required = false,
   error,
@@ -17,7 +17,7 @@ export const Input: React.FC<InputProps> = ({
   icon,
   className = '',
   ...props
-}) => {
+}, ref) => {
   const inputClasses = [
     'mobile-input',
     icon && 'mobile-input--with-icon',
@@ -34,7 +34,7 @@ export const Input: React.FC<InputProps> = ({
       )}
       <div className="mobile-input-container">
         {icon && <span className="mobile-input__icon">{icon}</span>}
-        <input className={inputClasses} {...props} />
+        <input className={inputClasses} ref={ref} {...props} />
       </div>
       {error && (
         <span className="mobile-input-error">
@@ -51,7 +51,9 @@ export const Input: React.FC<InputProps> = ({
       )}
     </div>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;

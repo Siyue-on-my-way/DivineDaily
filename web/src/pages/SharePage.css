@@ -147,6 +147,96 @@
   padding-top: 1rem;
 }
 
+/* Share Actions */
+.share-actions {
+  margin: 2rem 0;
+}
+
+.share-actions-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.share-actions-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.share-actions-text {
+  font-size: 0.95rem;
+  color: #4a5568;
+  margin: 0;
+}
+
+.share-actions-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.share-actions-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.share-actions-qr span {
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+
+.share-actions-manual {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.share-actions-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: #0f172a;
+  background: white;
+}
+
+.share-actions-poster {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.share-actions-poster img {
+  width: min(100%, 320px);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+}
+
+.share-actions-buttons {
+  display: grid;
+  gap: 0.75rem;
+}
+
 /* CTA Section */
 .share-cta {
   margin: 2rem 0;
@@ -249,6 +339,19 @@
   opacity: 0.9;
 }
 
+.share-error-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.share-error-token {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .share-header {
@@ -326,6 +429,11 @@
 
   .share-question-text {
     font-size: 1.25rem;
+  }
+
+  .share-actions-grid {
+    grid-template-columns: minmax(180px, 220px) 1fr;
+    align-items: center;
   }
 }
 

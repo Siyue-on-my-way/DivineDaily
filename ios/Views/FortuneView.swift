@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FortuneView: View {
     @StateObject private var store: FortuneStore
+    @State private var showDetail = false
 
     init(authStore: AuthStore) {
         _store = StateObject(wrappedValue: FortuneStore(authStore: authStore))
@@ -19,47 +20,29 @@ struct FortuneView: View {
                 }
 
                 if let f = store.today {
-                    GroupBox("综合运势") {
-                        HStack {
-                            Text("总分")
-                            Spacer()
-                            Text("\(f.overallScore)")
-                                .bold()
-                                .foregroundColor(.indigo)
-                        }
-                    }
+                    FortuneScoreCard(overallScore: f.overallScore)
 
-                    GroupBox("分项评分") {
-                        VStack(spacing: 8) {
-                            scoreRow("财运", f.wealthScore)
-                            scoreRow("事业", f.careerScore)
-                            scoreRow("感情", f.loveScore)
-                            scoreRow("健康", f.healthScore)
-                        }
-                    }
+                    FortuneScoreGrid(
+                        wealthScore: f.wealthScore,
+                        careerScore: f.careerScore,
+                        loveScore: f.loveScore,
+                        healthScore: f.healthScore
+                    )
 
-                    GroupBox("幸运信息") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("幸运色：\(f.luckyColor)")
-                            Text("幸运数字：\(f.luckyNumber)")
-                            Text("幸运方位：\(f.luckyDirection)")
-                            Text("幸运时辰：\(f.luckyTime)")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    FortuneLuckyCard(
+                        luckyColor: f.luckyColor,
+                        luckyNumber: f.luckyNumber,
+                        luckyDirection: f.luckyDirection,
+                        luckyTime: f.luckyTime
+                    )
 
-                    GroupBox("宜忌") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("宜：\(f.yi)")
-                            Text("忌：\(f.ji)")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    FortuneYiJiCard(yi: f.yi, ji: f.ji)
 
-                    GroupBox("解读") {
-                        Text(f.content)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    FortuneDetailCard(
+                        content: f.content,
+                        isExpanded: showDetail,
+                        onToggle: { showDetail.toggle() }
+                    )
                 }
 
                 GroupBox("最近运势历史") {
@@ -124,6 +107,182 @@ struct FortuneView: View {
             Spacer()
             Text("\(score)")
                 .foregroundColor(.secondary)
+        }
+    }
+}
+
+private struct FortuneScoreCard: View {
+    let overallScore: Int
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("综合运势")
+                    .font(.headline)
+                HStack {
+                    Text("总分")
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(overallScore)")
+                        .font(.title2)
+                        .bold()
+                        .foregroundColor(.indigo)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct FortuneScoreGrid: View {
+    let wealthScore: Int
+    let careerScore: Int
+    let loveScore: Int
+    let healthScore: Int
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("分项评分")
+                    .font(.headline)
+                HStack(spacing: 12) {
+                    scoreTile(title: "财运", score: wealthScore, color: .orange)
+                    scoreTile(title: "事业", score: careerScore, color: .blue)
+                }
+                HStack(spacing: 12) {
+                    scoreTile(title: "感情", score: loveScore, color: .pink)
+                    scoreTile(title: "健康", score: healthScore, color: .green)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func scoreTile(title: String, score: Int, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text("\(score)")
+                .font(.headline)
+                .foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(color.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+private struct FortuneLuckyCard: View {
+    let luckyColor: String
+    let luckyNumber: Int
+    let luckyDirection: String
+    let luckyTime: String
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("幸运信息")
+                    .font(.headline)
+                HStack(spacing: 12) {
+                    luckyItem(title: "幸运色", value: luckyColor)
+                    luckyItem(title: "幸运数字", value: "\(luckyNumber)")
+                }
+                HStack(spacing: 12) {
+                    luckyItem(title: "幸运方位", value: luckyDirection)
+                    luckyItem(title: "幸运时辰", value: luckyTime)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func luckyItem(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.subheadline)
+                .bold()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+private struct FortuneYiJiCard: View {
+    let yi: String
+    let ji: String
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("宜忌")
+                    .font(.headline)
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("宜")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(yi.isEmpty ? "无" : yi)
+                            .font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color.green.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("忌")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(ji.isEmpty ? "无" : ji)
+                            .font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color.red.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct FortuneDetailCard: View {
+    let content: String
+    let isExpanded: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("解读")
+                        .font(.headline)
+                    Spacer()
+                    Button(isExpanded ? "收起" : "展开") {
+                        onToggle()
+                    }
+                    .font(.caption)
+                }
+
+                if isExpanded {
+                    MarkdownText(content, fallback: "暂无内容")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text(content.isEmpty ? "暂无内容" : content)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .lineLimit(3)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

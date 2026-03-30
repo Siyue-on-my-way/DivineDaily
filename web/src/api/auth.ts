@@ -7,6 +7,8 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  refresh_token: string;
+  token_type?: string;
   user: {
     id: string;
     username: string;
@@ -25,6 +27,8 @@ export interface RegisterRequest {
 
 export interface RefreshTokenResponse {
   token: string;
+  refresh_token: string;
+  token_type?: string;
 }
 
 const api = axiosInstance;
@@ -55,8 +59,10 @@ export const authApi = {
   },
 
   // 刷新 Token
-  refreshToken: async (): Promise<RefreshTokenResponse> => {
-    const response = await api.post<RefreshTokenResponse>('/auth/refresh');
+  refreshToken: async (refreshToken: string): Promise<RefreshTokenResponse> => {
+    const response = await api.post<RefreshTokenResponse>('/auth/refresh', {
+      refresh_token: refreshToken,
+    });
     return response.data;
   },
 };
