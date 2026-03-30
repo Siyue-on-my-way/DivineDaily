@@ -1,7 +1,7 @@
 """add divination shares table
 
 Revision ID: 011_add_divination_shares
-Revises: 010_add_quality_and_pattern_tables
+Revises: 010
 Create Date: 2026-03-01
 
 """
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '011_add_divination_shares'
-down_revision = '010_add_quality_and_pattern_tables'
+down_revision = '010'
 branch_labels = None
 depends_on = None
 

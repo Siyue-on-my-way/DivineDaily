@@ -41,9 +41,65 @@ export default function LLMConfigForm({ config, onSubmit, onCancel }: Props) {
     }
   }, [config]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [endpointError, setEndpointError] = useState<string>('');
+  const [endpointNotice, setEndpointNotice] = useState<string>('');
+
+  const normalizeEndpointByUrlType = (endpoint: string, urlType?: string) => {
+    const normalized = endpoint.trim().replace(/\/+$/, '');
+    if (!normalized) return normalized;
+
+    if (urlType === 'openai_compatible') {
+      return normalized.endsWith('/chat/completions')
+        ? normalized.replace(/\/chat\/completions$/, '')
+        : normalized;
+    }
+
+    return normalized;
+  };
+
+  const validateEndpoint = (endpoint: string, urlType?: string) => {
+    const value = endpoint.trim();
+    if (!value) {
+      return '请填写 Endpoint';
+    }
+
+    try {
+      // eslint-disable-next-line no-new
+      new URL(value);
+    } catch {
+      return 'Endpoint 不是合法 URL，请包含 http:// 或 https://';
+    }
+
+    if (urlType === 'custom' && !value.includes('/chat/completions')) {
+      return '自定义模式必须填写完整 URL，且包含 /chat/completions';
+    }
+
+    return '';
+  };
+
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    const error = validateEndpoint(formData.endpoint || '', formData.url_type);
+    if (error) {
+      setEndpointError(error);
+      return;
+    }
+
+    const normalizedEndpoint = normalizeEndpointByUrlType(formData.endpoint || '', formData.url_type);
+    const normalizedChanged = normalizedEndpoint !== (formData.endpoint || '').trim().replace(/\/+$/, '');
+
+    setEndpointError('');
+    setEndpointNotice(
+      normalizedChanged
+        ? `已自动纠正 Endpoint 为：${normalizedEndpoint}`
+        : ''
+    );
+
+    onSubmit({
+      ...formData,
+      endpoint: normalizedEndpoint,
+    });
   };
 
   return (
@@ -87,7 +143,14 @@ export default function LLMConfigForm({ config, onSubmit, onCancel }: Props) {
                   name="url_type"
                   value="openai_compatible"
                   checked={formData.url_type === 'openai_compatible' || !formData.url_type}
-                  onChange={(e) => setFormData({ ...formData, url_type: e.target.value })}
+                  onChange={(e) => {
+                    const nextType = e.target.value;
+                    setFormData({ ...formData, url_type: nextType });
+                    if (formData.endpoint) {
+                      setEndpointError(validateEndpoint(formData.endpoint, nextType));
+                    }
+                    setEndpointNotice('');
+                  }}
                   style={{ marginRight: '5px' }}
                 />
                 OpenAI兼容 (自动补全 /chat/completions)
@@ -98,16 +161,23 @@ export default function LLMConfigForm({ config, onSubmit, onCancel }: Props) {
                   name="url_type"
                   value="custom"
                   checked={formData.url_type === 'custom'}
-                  onChange={(e) => setFormData({ ...formData, url_type: e.target.value })}
+                  onChange={(e) => {
+                    const nextType = e.target.value;
+                    setFormData({ ...formData, url_type: nextType });
+                    if (formData.endpoint) {
+                      setEndpointError(validateEndpoint(formData.endpoint, nextType));
+                    }
+                    setEndpointNotice('');
+                  }}
                   style={{ marginRight: '5px' }}
                 />
                 自定义 (使用完整URL)
               </label>
             </div>
             <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
-              {formData.url_type === 'custom' 
-                ? '请填写完整的 API URL，例如：http://host:port/v1/chat/completions' 
-                : '系统不会自动追加 /chat/completions，需输入完整 URL，例如：https://once.novai.su/v1/chat/completions'}
+              {formData.url_type === 'custom'
+                ? '请填写完整的 API URL，例如：http://host:port/v1/chat/completions'
+                : '请填写 Base URL（到 /v1 即可），系统会自动补全 /chat/completions，例如：https://once.novai.su/v1'}
             </small>
           </div>
 
@@ -126,9 +196,31 @@ export default function LLMConfigForm({ config, onSubmit, onCancel }: Props) {
             <input
               type="text"
               value={formData.endpoint}
-              onChange={(e) => setFormData({ ...formData, endpoint: e.target.value })}
-              placeholder="本地模型需要填写Endpoint"
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({ ...formData, endpoint: value });
+                if (endpointError) {
+                  setEndpointError(validateEndpoint(value, formData.url_type));
+                }
+                if (endpointNotice) {
+                  setEndpointNotice('');
+                }
+              }}
+              onBlur={(e) => {
+                const error = validateEndpoint(e.target.value, formData.url_type);
+                setEndpointError(error);
+              }}
+              placeholder={formData.url_type === 'custom'
+                ? '例如：http://host:port/v1/chat/completions'
+                : '例如：http://host:port/v1'}
+              className={endpointError ? 'input-error' : ''}
             />
+            {endpointError && (
+              <div className="field-error">{endpointError}</div>
+            )}
+            {endpointNotice && (
+              <div className="field-notice">{endpointNotice}</div>
+            )}
           </div>
 
           <div className="form-group">

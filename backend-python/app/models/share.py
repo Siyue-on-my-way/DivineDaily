@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from app.core.database import Base
@@ -30,10 +30,18 @@ class DivinationShare(Base):
         return f"<DivinationShare(id={self.id}, token={self.share_token}, views={self.view_count})>"
     
     def is_expired(self) -> bool:
-        """检查分享是否已过期"""
+        """检查分享是否已过期（兼容 naive/aware datetime）"""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+
+        expires_at = self.expires_at
+
+        # aware datetime：使用 UTC aware now 比较
+        if expires_at.tzinfo is not None:
+            return datetime.now(timezone.utc) > expires_at
+
+        # naive datetime：保持 naive 比较，避免 TypeError
+        return datetime.utcnow() > expires_at
     
     def increment_view_count(self):
         """增加浏览次数"""

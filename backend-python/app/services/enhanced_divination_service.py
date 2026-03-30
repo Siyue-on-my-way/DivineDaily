@@ -16,6 +16,7 @@ from app.models.divination import DivinationSession as DivinationSessionModel
 from app.core.logger import get_logger
 import traceback
 import uuid
+from datetime import datetime, timezone
 
 logger = get_logger("divination")
 
@@ -80,8 +81,13 @@ class EnhancedDivinationService(DivinationService):
         else:
             analysis = self.question_analyzer._fallback_analysis(request.question)
         
-        # 智能路由占卜
-        session_id = str(uuid.uuid4())
+        # 智能路由占卜（优先复用外部传入 session_id）
+        session_id = None
+        if getattr(request, 'context', None):
+            session_id = request.context.get('session_id')
+        if not session_id:
+            session_id = str(uuid.uuid4())
+
         try:
             divination_result = await self.router.route_question(
                 session_id=session_id,
@@ -217,6 +223,7 @@ class EnhancedDivinationService(DivinationService):
         # 创建简化的结果对象
         result = {
             'session_id': session_id,
+            'status': 'completed',
             'question': request.question,
             'title': '温馨提示',
             'summary': answer,
@@ -224,7 +231,8 @@ class EnhancedDivinationService(DivinationService):
             'outcome': '',
             'hexagram_info': None,
             'quality': quality,
-            'processing_type': 'direct_answer'
+            'processing_type': 'direct_answer',
+            'created_at': datetime.now(timezone.utc),
         }
         
         # 保存到数据库（可选）
@@ -232,7 +240,12 @@ class EnhancedDivinationService(DivinationService):
             session = DivinationSessionModel(
                 id=session_id,
                 user_id=request.user_id,
+                version=getattr(request, 'version', None) or 'CN',
                 question=request.question,
+                event_type=getattr(request, 'event_type', None),
+                orientation=getattr(request, 'orientation', None),
+                spread=getattr(request, 'spread', None),
+                intent=getattr(request, 'intent', None),
                 result_summary=answer,
                 result_detail=answer,
                 result_data={'quality': quality, 'processing_type': 'direct_answer'},
@@ -241,6 +254,7 @@ class EnhancedDivinationService(DivinationService):
             self.db.add(session)
             await self.db.flush()
         except Exception as e:
+            await self.db.rollback()
             logger.warning("保存直接回答记录失败", exc_info=True)
         
         return result

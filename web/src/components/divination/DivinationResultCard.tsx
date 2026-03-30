@@ -77,6 +77,7 @@ export default function DivinationResultCard({ result }: Props) {
     } finally {
       setSharing(false);
     }
+  };
 
   const renderHexagramLines = (hexagram: HexagramInfo) => {
     if (!hexagram.line_values || hexagram.line_values.length !== 6) return null;

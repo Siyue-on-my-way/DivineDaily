@@ -25,6 +25,14 @@ export type EventType = 'decision' | 'career' | 'relationship' | 'fortune' | 'kn
 export interface DivinationResult {
   /** 会话ID */
   session_id: string;
+  /** 状态 */
+  status?: DivinationStatus;
+  /** 失败错误码 */
+  error_code?: string;
+  /** 失败错误信息 */
+  error_message?: string;
+  /** 是否可重试 */
+  retryable?: boolean;
   /** 占卜结果（吉/凶/平） */
   outcome?: string;
   /** 标题 */
@@ -59,8 +67,6 @@ export interface DivinationResult {
   follow_up_question?: FollowUpQuestion;
   /** 创建时间 */
   created_at: string;
-  /** 状态 */
-  status?: DivinationStatus;
 }
 
 /**

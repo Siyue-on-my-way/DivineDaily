@@ -88,6 +88,9 @@ class DivinationResult(BaseModel):
     """占卜结果"""
     session_id: str
     status: Optional[str] = Field(None, description="状态：processing/completed/failed")
+    error_code: Optional[str] = Field(None, description="失败错误码")
+    error_message: Optional[str] = Field(None, description="失败错误信息")
+    retryable: Optional[bool] = Field(None, description="是否可重试")
     outcome: Optional[str] = None  # 吉/凶/平
     title: Optional[str] = None
     spread: Optional[str] = None
@@ -159,6 +162,16 @@ class DivinationSession(BaseModel):
     follow_up_count: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
+
+
+class DivinationTaskAccepted(BaseModel):
+    """占卜任务已受理响应"""
+    accepted: bool = Field(True, description="是否已受理")
+    session_id: str = Field(..., description="占卜会话 ID")
+    status: str = Field("processing", description="当前状态")
+    status_url: str = Field(..., description="查询状态/结果的 API 路径")
+    message: str = Field("占卜任务已受理，正在处理中", description="提示信息")
+    created_at: datetime

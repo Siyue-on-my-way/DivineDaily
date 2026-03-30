@@ -16,9 +16,19 @@ const stages: LoadingStage[] = [
 
 interface DivinationLoadingProps {
   onCancel?: () => void;
+  pollingElapsedMs?: number;
+  pollingAttempts?: number;
+  pollingMaxAttempts?: number;
+  estimatedRemainingSeconds?: number;
 }
 
-export const DivinationLoading: React.FC<DivinationLoadingProps> = ({ onCancel }) => {
+export const DivinationLoading: React.FC<DivinationLoadingProps> = ({
+  onCancel,
+  pollingElapsedMs,
+  pollingAttempts,
+  pollingMaxAttempts,
+  estimatedRemainingSeconds,
+}) => {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -69,6 +79,7 @@ export const DivinationLoading: React.FC<DivinationLoadingProps> = ({ onCancel }
   };
 
   const stage = stages[currentStage];
+  const displayElapsedMs = typeof pollingElapsedMs === 'number' ? pollingElapsedMs : elapsedTime;
 
   return (
     <div className="divination-loading-overlay">
@@ -137,8 +148,15 @@ export const DivinationLoading: React.FC<DivinationLoadingProps> = ({ onCancel }
 
         {/* 时间提示 */}
         <div className="time-info">
-          <p className="time-elapsed">已用时: {formatTime(elapsedTime)}</p>
-          <p className="time-hint">预计还需 {Math.max(0, 15 - Math.floor(elapsedTime / 1000))} 秒</p>
+          <p className="time-elapsed">已用时: {formatTime(displayElapsedMs)}</p>
+          <p className="time-hint">
+            预计还需 {typeof estimatedRemainingSeconds === 'number'
+              ? Math.max(0, estimatedRemainingSeconds)
+              : Math.max(0, 15 - Math.floor(displayElapsedMs / 1000))} 秒
+          </p>
+          {typeof pollingAttempts === 'number' && typeof pollingMaxAttempts === 'number' && (
+            <p className="time-hint">查询进度：第 {pollingAttempts}/{pollingMaxAttempts} 次</p>
+          )}
         </div>
 
         {/* 提示文字 */}

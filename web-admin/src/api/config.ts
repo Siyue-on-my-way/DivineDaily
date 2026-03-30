@@ -107,9 +107,12 @@ export const assistantConfigApi = {
     return response.data.data;
   },
 
-  // 测试Assistant配置
+  // 测试Assistant配置（较长超时，禁用自动重试）
   test: async (id: number): Promise<any> => {
-    const response = await api.post<any>(`/configs/assistant/${id}/test`);
+    const response = await api.post<any>(`/configs/assistant/${id}/test`, undefined, {
+      timeout: 90000,
+      _disableRetry: true,
+    } as any);
     return response.data;
   },
 };
