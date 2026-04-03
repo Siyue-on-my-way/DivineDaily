@@ -1,4 +1,3 @@
-import { useState, useMemo } from 'react';
 import './HistoryFilter.css';
 
 interface FilterOption {

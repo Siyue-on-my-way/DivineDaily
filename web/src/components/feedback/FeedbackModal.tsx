@@ -20,7 +20,7 @@ export interface FeedbackData {
 export function FeedbackModal({
   isOpen,
   onClose,
-  sessionId,
+  sessionId: _sessionId,
   feedbackType,
   onSubmit
 }: FeedbackModalProps) {

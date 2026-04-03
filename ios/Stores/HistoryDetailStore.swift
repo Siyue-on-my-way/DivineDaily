@@ -8,6 +8,7 @@ final class HistoryDetailStore: ObservableObject {
     @Published var isSaving = false
     @Published var isSharing = false
     @Published var shareURL: String?
+    @Published var shareStats: ShareStatsResponse?
 
     private let service: DivinationService
     private let shareService: ShareService
@@ -51,8 +52,9 @@ final class HistoryDetailStore: ObservableObject {
         do {
             let response = try await shareService.createShare(sessionId: sessionId, expiresDays: 30, isPublic: true)
             shareURL = response.url
+            await loadShareStats(sessionId: sessionId)
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? "创建分享失败"
+            errorMessage = mapError(error, fallback: "创建分享失败")
         }
     }
 
@@ -71,6 +73,26 @@ final class HistoryDetailStore: ObservableObject {
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "保存失败"
         }
+    }
+
+    func loadShareStats(sessionId: String) async {
+        guard !sessionId.isEmpty else { return }
+
+        do {
+            shareStats = try await shareService.fetchShareStats(sessionId: sessionId)
+        } catch {
+            // 统计失败不影响主流程，只保留轻提示
+            if errorMessage == nil {
+                errorMessage = mapError(error, fallback: "加载分享统计失败")
+            }
+        }
+    }
+
+    private func mapError(_ error: Error, fallback: String) -> String {
+        if let apiError = error as? APIError {
+            return apiError.errorDescription ?? fallback
+        }
+        return (error as? LocalizedError)?.errorDescription ?? fallback
     }
 
     func resetActions() {

@@ -205,7 +205,6 @@ export class PerformanceMonitor {
  * 虚拟滚动辅助类
  */
 export class VirtualScroller {
-  private container: HTMLElement;
   private itemHeight: number;
   private visibleCount: number;
   private totalCount: number;
@@ -216,7 +215,6 @@ export class VirtualScroller {
     itemHeight: number,
     totalCount: number
   ) {
-    this.container = container;
     this.itemHeight = itemHeight;
     this.totalCount = totalCount;
     this.visibleCount = Math.ceil(container.clientHeight / itemHeight) + 2;

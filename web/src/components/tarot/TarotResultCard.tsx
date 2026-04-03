@@ -27,7 +27,7 @@ export default function TarotResultCard({ result }: TarotResultCardProps) {
 
       {/* 塔罗牌展示 */}
       {result.cards && result.cards.length > 0 && (
-        <Card variant="glass">
+        <Card variant="elevated">
           <CardContent>
             <TarotCardDisplay 
               cards={result.cards} 
@@ -54,11 +54,11 @@ export default function TarotResultCard({ result }: TarotResultCardProps) {
 
       {/* 详细解读（可展开） */}
       {result.detail && (
-        <Card variant="glass">
+        <Card variant="elevated">
           <CardContent>
             <div className="space-y-3">
               <Button
-                variant="ghost"
+                variant="text"
                 fullWidth
                 onClick={() => setShowDetail(!showDetail)}
                 icon={
@@ -94,7 +94,7 @@ export default function TarotResultCard({ result }: TarotResultCardProps) {
 
       {/* 场景建议 */}
       {result.scene_advice && result.scene_advice.length > 0 && (
-        <Card variant="glass">
+        <Card variant="elevated">
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center gap-2">

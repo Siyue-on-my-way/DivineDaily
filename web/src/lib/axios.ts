@@ -43,19 +43,18 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-<<<<<<< HEAD
 let isRefreshing = false;
 let refreshQueue: Array<(token: string | null) => void> = [];
 
 const resolveRefreshQueue = (token: string | null) => {
   refreshQueue.forEach((callback) => callback(token));
   refreshQueue = [];
-=======
+};
+
 const isSilentErrorRequest = (config?: InternalAxiosRequestConfig): boolean => {
   if (!config?.headers) return false;
   const value = config.headers['X-Silent-Error'] as string | undefined;
   return value === '1';
->>>>>>> 693232a449620e72f88d5ac485de6ea2585954ae
 };
 
 // 响应拦截器

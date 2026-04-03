@@ -300,6 +300,28 @@ async def get_divination_stats(
         raise HTTPException(status_code=500, detail=f"获取统计失败: {str(e)}")
 
 
+@router.post("/{session_id}/save")
+async def save_divination_session(
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    兼容客户端“保存占卜”动作。
+
+    目前占卜会话在 `/divinations/start` 时就会落库，因此这里只做归属校验并返回成功。
+    """
+    repo = DivinationRepository(db)
+    session = await repo.get_session(session_id)
+    if not session:
+        raise NotFoundError("占卜会话不存在")
+
+    if str(session.user_id) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="无权保存该会话")
+
+    return {"ok": True, "message": "已保存"}
+
+
 @router.get("/{session_id}", response_model=DivinationResult)
 async def get_divination_result(
     session_id: str,

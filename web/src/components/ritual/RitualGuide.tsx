@@ -116,7 +116,7 @@ export default function RitualGuide({
     }
   };
 
-  const playSound = (type: 'bell' | 'chime') => {
+  const playSound = (_type: 'bell' | 'chime') => {
     if (enableSound) {
       // 这里可以集成音频播放
       // const audio = new Audio(`/sounds/${type}.mp3`);

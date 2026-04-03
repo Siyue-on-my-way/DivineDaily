@@ -872,4 +872,8 @@ var calendar = (function () {
   return calendar;
 
 })();
+if (typeof window !== 'undefined') {
+  window.calendar = calendar;
+}
+export default calendar;
 //# sourceMappingURL=js-calendar-converter.js.map

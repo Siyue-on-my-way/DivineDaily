@@ -1,5 +1,35 @@
 /* App 全局样式 */
 
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 40vh;
+  padding: 24px;
+  color: var(--text-secondary, #64748b);
+  font-size: 14px;
+}
+
+.app-loading__spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid color-mix(in srgb, var(--primary-green, #059669) 25%, transparent);
+  border-top-color: var(--primary-green, #059669);
+  border-radius: 50%;
+  animation: app-loading-spin 0.7s linear infinite;
+}
+
+.app-loading__text {
+  user-select: none;
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .app {
   min-height: 100vh;
   background: var(--bg-primary);

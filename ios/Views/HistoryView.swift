@@ -1,12 +1,19 @@
 import SwiftUI
+import UIKit
 
 struct HistoryView: View {
     @EnvironmentObject private var authStore: AuthStore
     @StateObject private var store: HistoryStore
 
-    @State private var eventType = ""
-    @State private var version = ""
-    @State private var status = ""
+    @AppStorage("history.filter.eventType") private var eventType = ""
+    @AppStorage("history.filter.version") private var version = ""
+    @AppStorage("history.filter.status") private var status = ""
+    @AppStorage("history.filter.startDate") private var startDate = ""
+    @AppStorage("history.filter.endDate") private var endDate = ""
+    @AppStorage("history.filter.orderBy") private var orderBy = "created_at"
+    @AppStorage("history.filter.orderDirection") private var orderDirection = "desc"
+    @State private var filterValidationMessage: String?
+    @State private var showQuickFilterHint = false
 
     init(authStore: AuthStore) {
         _store = StateObject(wrappedValue: HistoryStore(authStore: authStore))
@@ -33,15 +40,90 @@ struct HistoryView: View {
 
                 Picker("状态", selection: $status) {
                     Text("全部").tag("")
-                    Text("进行中").tag("pending")
+                    Text("处理中").tag("processing")
                     Text("已完成").tag("completed")
                     Text("失败").tag("failed")
                 }
 
-                Button("应用筛选") {
-                    Task {
-                        await store.applyFilters(eventType: eventType, version: version, status: status)
+                TextField("开始日期（YYYY-MM-DD）", text: $startDate)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                TextField("结束日期（YYYY-MM-DD）", text: $endDate)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                Picker("排序字段", selection: $orderBy) {
+                    Text("创建时间").tag("created_at")
+                    Text("更新时间").tag("updated_at")
+                }
+
+                Picker("排序方向", selection: $orderDirection) {
+                    Text("降序").tag("desc")
+                    Text("升序").tag("asc")
+                }
+
+                HStack(spacing: 12) {
+                    Button("应用筛选") {
+                        switch validateDateFilters(startDate: startDate, endDate: endDate) {
+                        case .success:
+                            filterValidationMessage = nil
+                            Task {
+                                await store.applyFilters(
+                                    eventType: eventType,
+                                    version: version,
+                                    status: status,
+                                    startDate: startDate,
+                                    endDate: endDate,
+                                    orderBy: orderBy,
+                                    orderDirection: orderDirection
+                                )
+                            }
+                        case .failure(let msg):
+                            filterValidationMessage = msg
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("仅看失败") {
+                        status = "failed"
+                        filterValidationMessage = nil
+                        showQuickFilterHint = true
+                        Task {
+                            await store.applyFilters(
+                                eventType: eventType,
+                                version: version,
+                                status: status,
+                                startDate: startDate,
+                                endDate: endDate,
+                                orderBy: orderBy,
+                                orderDirection: orderDirection
+                            )
+                        }
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("重置") {
+                        resetFiltersToDefault()
+                        filterValidationMessage = nil
+                        Task {
+                            await store.applyFilters(
+                                eventType: eventType,
+                                version: version,
+                                status: status,
+                                startDate: startDate,
+                                endDate: endDate,
+                                orderBy: orderBy,
+                                orderDirection: orderDirection
+                            )
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            if let validationError = filterValidationMessage {
+                Section {
+                    CommonErrorBanner(message: validationError)
                 }
             }
 
@@ -53,8 +135,14 @@ struct HistoryView: View {
 
             Section("占卜记录（共 \(store.items.count)/\(store.total) 条）") {
                 if store.items.isEmpty, !store.isLoading {
-                    Text("暂无占卜历史")
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("暂无符合条件的占卜记录")
+                            .foregroundColor(.secondary)
+                        Text("建议：清空筛选条件后重试，或先发起一次新的占卜。")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 6)
                 }
 
                 ForEach(store.items) { item in
@@ -78,7 +166,7 @@ struct HistoryView: View {
                                 }
 
                                 Spacer()
-                                Text(item.createdAt)
+                                Text(DateTextFormatter.format(item.createdAt))
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
@@ -106,11 +194,96 @@ struct HistoryView: View {
         }
         .navigationTitle("历史记录")
         .task {
-            await store.load()
+            let initialValidation = validateDateFilters(startDate: startDate, endDate: endDate)
+            switch initialValidation {
+            case .success:
+                filterValidationMessage = nil
+                await store.applyFilters(
+                    eventType: eventType,
+                    version: version,
+                    status: status,
+                    startDate: startDate,
+                    endDate: endDate,
+                    orderBy: orderBy,
+                    orderDirection: orderDirection
+                )
+            case .failure(let msg):
+                filterValidationMessage = msg
+                await store.applyFilters(
+                    eventType: eventType,
+                    version: version,
+                    status: status,
+                    startDate: "",
+                    endDate: "",
+                    orderBy: orderBy,
+                    orderDirection: orderDirection
+                )
+            }
         }
         .refreshable {
-            await store.load()
+            switch validateDateFilters(startDate: startDate, endDate: endDate) {
+            case .success:
+                filterValidationMessage = nil
+                await store.applyFilters(
+                    eventType: eventType,
+                    version: version,
+                    status: status,
+                    startDate: startDate,
+                    endDate: endDate,
+                    orderBy: orderBy,
+                    orderDirection: orderDirection
+                )
+            case .failure(let msg):
+                filterValidationMessage = msg
+            }
         }
+        .alert("快捷筛选已生效", isPresented: $showQuickFilterHint) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text("当前已切换为仅展示失败记录。")
+        }
+    }
+
+    private func resetFiltersToDefault() {
+        eventType = ""
+        version = ""
+        status = ""
+        startDate = ""
+        endDate = ""
+        orderBy = "created_at"
+        orderDirection = "desc"
+    }
+
+    private func validateDateFilters(startDate: String, endDate: String) -> Result<Void, String> {
+        let trimmedStart = startDate.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEnd = endDate.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+
+        var parsedStart: Date?
+        if !trimmedStart.isEmpty {
+            guard let date = formatter.date(from: trimmedStart), formatter.string(from: date) == trimmedStart else {
+                return .failure("开始日期格式无效，请使用 YYYY-MM-DD")
+            }
+            parsedStart = date
+        }
+
+        var parsedEnd: Date?
+        if !trimmedEnd.isEmpty {
+            guard let date = formatter.date(from: trimmedEnd), formatter.string(from: date) == trimmedEnd else {
+                return .failure("结束日期格式无效，请使用 YYYY-MM-DD")
+            }
+            parsedEnd = date
+        }
+
+        if let start = parsedStart, let end = parsedEnd, start > end {
+            return .failure("开始日期不能晚于结束日期")
+        }
+
+        return .success(())
     }
 }
 
@@ -118,6 +291,9 @@ struct HistoryDetailView: View {
     @StateObject private var store: HistoryDetailStore
     @State private var showFeedback = false
     @State private var shareLinkItem: ShareLinkItem?
+    @State private var copiedShareURL: String?
+    @State private var showCopiedAlert = false
+    @State private var expandAllShares = false
 
     let authStore: AuthStore
     let item: DivinationHistoryItem
@@ -227,7 +403,7 @@ struct HistoryDetailView: View {
                     if let daily = result.dailyFortune {
                         GroupBox("每日运势") {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("综合：\(daily.overallScore)")
+                                Text("综合：\(daily.overallScore)（\(scoreLevelText(daily.overallScore))）")
                                 Text("财运/事业/感情/健康：\(daily.wealthScore)/\(daily.careerScore)/\(daily.loveScore)/\(daily.healthScore)")
                                 Text("幸运色：\(daily.luckyColor)  幸运数字：\(daily.luckyNumber)")
                                 Text("方位：\(daily.luckyDirection)  时辰：\(daily.luckyTime)")
@@ -288,6 +464,77 @@ struct HistoryDetailView: View {
                     .buttonStyle(.bordered)
                 }
 
+                if let stats = store.shareStats {
+                    GroupBox("分享统计") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("分享次数：\(stats.totalShares)")
+                            Text("总浏览量：\(stats.totalViews)")
+
+                            if stats.shares.isEmpty {
+                                Text("暂无分享记录")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Divider()
+                                HStack {
+                                    Text("分享列表")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Button(expandAllShares ? "收起" : "展开全部") {
+                                        expandAllShares.toggle()
+                                    }
+                                    .font(.caption2)
+                                    .buttonStyle(.bordered)
+                                }
+
+                                let displayShares = expandAllShares ? stats.shares : Array(stats.shares.prefix(3))
+
+                                ForEach(displayShares) { share in
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        if !share.url.isEmpty {
+                                            Text(share.url)
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(1)
+                                        }
+                                        HStack(spacing: 8) {
+                                            Text("浏览：\(share.viewCount)")
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                            Text(share.isExpired ? "已过期" : "有效")
+                                                .font(.caption2)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background((share.isExpired ? Color.gray : Color.green).opacity(0.15))
+                                                .clipShape(Capsule())
+                                            Spacer()
+                                            if !share.url.isEmpty {
+                                                Button("复制链接") {
+                                                    UIPasteboard.general.string = share.url
+                                                    copiedShareURL = share.url
+                                                    showCopiedAlert = true
+                                                }
+                                                .font(.caption2)
+                                                .buttonStyle(.bordered)
+                                            }
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+
+                                if !expandAllShares, stats.shares.count > 3 {
+                                    Text("仅展示前 3 条，点击“展开全部”查看全部记录")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                        .font(.footnote)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
                 Button("评价这次占卜") {
                     showFeedback = true
                 }
@@ -297,7 +544,7 @@ struct HistoryDetailView: View {
                     CommonErrorBanner(message: error)
                 }
 
-                Text("时间：\(item.createdAt)")
+                Text("时间：\(DateTextFormatter.format(item.createdAt))")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
@@ -309,6 +556,25 @@ struct HistoryDetailView: View {
         }
         .task {
             await store.load(sessionId: item.id)
+            await store.loadShareStats(sessionId: item.id)
+        }
+        .alert("复制成功", isPresented: $showCopiedAlert) {
+            Button("好的", role: .cancel) {}
+        } message: {
+            Text(copiedShareURL ?? "链接已复制到剪贴板")
+        }
+    }
+
+    private func scoreLevelText(_ score: Int) -> String {
+        switch score {
+        case 85...100:
+            return "大吉"
+        case 70...84:
+            return "吉"
+        case 50...69:
+            return "平"
+        default:
+            return "需谨慎"
         }
     }
 }

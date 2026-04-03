@@ -152,7 +152,7 @@ export default function TarotFlow() {
               {SPREAD_OPTIONS.map((spread) => (
                 <Card
                   key={spread.id}
-                  variant="glass"
+                  variant="elevated"
                   className="tarot-spread-card"
                   onClick={() => selectSpread(spread.id)}
                 >
@@ -258,7 +258,7 @@ export default function TarotFlow() {
             </div>
 
             <div className="tarot-section">
-              <Card variant="glass">
+              <Card variant="elevated">
                 <CardContent>
                   <div className="tarot-shuffle-visual">
                     <div className="tarot-loading-cards">

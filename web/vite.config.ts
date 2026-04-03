@@ -9,6 +9,39 @@ export default defineConfig(({ mode }) => {
   console.log('API Proxy Target:', apiProxyTarget)
   return {
     plugins: [react()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) {
+              return undefined;
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            if (id.includes('react-router')) {
+              return 'router';
+            }
+            if (id.includes('axios')) {
+              return 'axios';
+            }
+            if (id.includes('i18next') || id.includes('react-i18next')) {
+              return 'i18n';
+            }
+            if (
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react/') ||
+              id.includes('node_modules\\react\\') ||
+              id.includes('node_modules\\react-dom') ||
+              id.includes('node_modules/scheduler/')
+            ) {
+              return 'react-core';
+            }
+            return 'vendor';
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

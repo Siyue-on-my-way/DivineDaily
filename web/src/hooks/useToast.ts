@@ -1,5 +1,3 @@
-import { ToastType } from '../components/ui/Toast';
-
 export const toast = {
   success: (message: string, duration?: number) => {
     window.dispatchEvent(new CustomEvent('toast:success', {

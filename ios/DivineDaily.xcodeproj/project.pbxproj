@@ -40,6 +40,7 @@
 		BCB96693F8D4CBF8CC59A055 /* DivinationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BCA55C58C3B8112AB84143D /* DivinationStore.swift */; };
 		C21D27E2D85BB8E82F32B43C /* FortuneService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9774C11F7FB05AC9A2727F /* FortuneService.swift */; };
 		C3FF6756D15AEEB9A62C3FAA /* DateTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3234209F2211E739F4BF546 /* DateTextFormatter.swift */; };
+		F9B2D3E45A6C718293A4B5E6F /* ShareURLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A1C2D34F5B60718293A4B5E /* ShareURLParser.swift */; };
 		C9FE7C354B4103FD2C223B89 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148870BE9E86D0370EB549FF /* RegisterView.swift */; };
 		D1B7A5BD0536163CD066589F /* HistoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B2D10AAB933CC2BBCA5E62 /* HistoryModels.swift */; };
 		EDC1DABF6872B9143A6F525E /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB3F9DDA5C675ECAB6D1F5F /* ShareView.swift */; };
@@ -88,6 +89,7 @@
 		CE7A096BC3AB980984FC0E29 /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		CED6AEF515C84C8F71AF52DE /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
 		D3234209F2211E739F4BF546 /* DateTextFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTextFormatter.swift; sourceTree = "<group>"; };
+		E8A1C2D34F5B60718293A4B5E /* ShareURLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareURLParser.swift; sourceTree = "<group>"; };
 		D72EB5B184B65E1EC8562AEE /* ShareStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareStore.swift; sourceTree = "<group>"; };
 		E4E4C804D7330ACB60B464F9 /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
 		E6910AAD53AFDE5A9F24914F /* FortuneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneView.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				D3234209F2211E739F4BF546 /* DateTextFormatter.swift */,
+				E8A1C2D34F5B60718293A4B5E /* ShareURLParser.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -299,6 +302,7 @@
 				B66ACE213419ED9A3C78F5B8 /* AuthStore.swift in Sources */,
 				F6242DD9B5546EA544913AB0 /* CommonErrorBanner.swift in Sources */,
 				C3FF6756D15AEEB9A62C3FAA /* DateTextFormatter.swift in Sources */,
+				F9B2D3E45A6C718293A4B5E6F /* ShareURLParser.swift in Sources */,
 				A99010B5B647537DF813D6DB /* DivinationModels.swift in Sources */,
 				43ED27EC82B42043B780551A /* DivinationPollingHelper.swift in Sources */,
 				187ED3DA9F446170C6ADBEB4 /* DivinationService.swift in Sources */,

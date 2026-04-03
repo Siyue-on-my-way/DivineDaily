@@ -62,7 +62,7 @@ final class TarotStore: ObservableObject {
         result = nil
 
         do {
-            let first = try await service.startTarot(
+            let accepted = try await service.startTarot(
                 userId: userId,
                 question: trimmed,
                 spread: selectedSpread,
@@ -70,13 +70,7 @@ final class TarotStore: ObservableObject {
                 shuffleTrace: shuffleTrace
             )
 
-            if (first.status ?? "completed") == "completed", !first.summary.isEmpty {
-                result = first
-                isLoading = false
-                return
-            }
-
-            startPolling(sessionId: first.sessionId)
+            startPolling(sessionId: accepted.sessionId)
         } catch {
             isLoading = false
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "塔罗占卜失败"
@@ -137,23 +131,34 @@ final class TarotStore: ObservableObject {
     private func startPolling(sessionId: String) {
         pollingTask?.cancel()
         pollingTask = Task {
-            let polled = try? await DivinationPollingHelper.pollResult(
-                sessionId: sessionId,
-                fetch: { id in try await self.service.getResult(sessionId: id) },
-                isCompleted: { current in
-                    let status = current.status ?? "completed"
-                    return status == "completed" || (!current.summary.isEmpty && !current.cards.isEmpty)
-                }
-            )
+            do {
+                let polled = try await DivinationPollingHelper.pollResult(
+                    sessionId: sessionId,
+                    fetch: { id in try await self.service.getResult(sessionId: id) },
+                    isCompleted: { current in
+                        let status = current.status ?? "completed"
+                        return status == "completed" || status == "failed"
+                    }
+                )
 
-            if let finalResult = polled {
+                guard let finalResult = polled else {
+                    isLoading = false
+                    errorMessage = "塔罗解读超时，请稍后在历史记录查看或重试"
+                    return
+                }
+
+                if (finalResult.status ?? "completed") == "failed" {
+                    isLoading = false
+                    errorMessage = finalResult.detail.isEmpty ? "塔罗解读失败，请重试" : finalResult.detail
+                    return
+                }
+
                 result = finalResult
                 isLoading = false
-                return
+            } catch {
+                isLoading = false
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? "塔罗请求失败，请检查网络后重试"
             }
-
-            isLoading = false
-            errorMessage = "塔罗解读超时，请重试"
         }
     }
 }

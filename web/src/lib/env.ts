@@ -1,19 +1,3 @@
-// 环境变量验证和类型定义
-interface ImportMetaEnv {
-  readonly VITE_API_PROXY_TARGET?: string;
-  readonly VITE_APP_BASE_URL?: string;
-  readonly VITE_DEBUG?: string;
-  readonly VITE_SENTRY_DSN?: string;
-  readonly VITE_ANALYTICS_ID?: string;
-  readonly DEV: boolean;
-  readonly PROD: boolean;
-  readonly MODE: string;
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
-
 // 环境变量配置
 export const env = {
   // API 配置

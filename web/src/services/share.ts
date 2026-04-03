@@ -13,7 +13,7 @@ export class ShareService {
    * 生成分享图片
    */
   static async generateShareImage(options: ShareImageOptions): Promise<Blob> {
-    const { result, userInfo } = options;
+    const { result } = options;
 
     // 创建 Canvas
     const canvas = document.createElement('canvas');
@@ -85,8 +85,8 @@ export class ShareService {
     });
 
     // 绘制评分（如果有）
-    if (result.daily_fortune?.score) {
-      const score = result.daily_fortune.score;
+    if (typeof result.daily_fortune?.overall_score === 'number') {
+      const score = result.daily_fortune.overall_score;
       const scoreY = cardY + cardHeight - 200;
 
       ctx.fillStyle = '#10B981';

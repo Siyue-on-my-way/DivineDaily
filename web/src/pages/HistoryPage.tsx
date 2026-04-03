@@ -104,7 +104,7 @@ export default function HistoryPage() {
       // 调用真实 API
       const response = await divinationApi.getHistory({
         limit: PAGE_SIZE,
-        page: currentPage,
+        offset,
       });
       
       // 转换数据格式
@@ -129,6 +129,8 @@ export default function HistoryPage() {
       
       if (!reset) {
         setPage(prev => prev + 1);
+      } else {
+        setPage(1);
       }
     } catch (err: any) {
       console.error('加载历史记录失败:', err);

@@ -28,8 +28,8 @@ export default function HomePageDesktop() {
     setLoading(true);
     try {
       const [fortuneData, historyResponse] = await Promise.all([
-        fortuneApi.getDaily({ user_id: user.id }).catch(() => null),
-        divinationApi.getHistory({ user_id: user.id, limit: 5 }).catch(() => ({ sessions: [], total: 0, limit: 5, offset: 0, has_more: false })),
+        fortuneApi.getDaily().catch(() => null),
+        divinationApi.getHistory({ limit: 5 }).catch(() => ({ sessions: [], total: 0, limit: 5, offset: 0, has_more: false })),
       ]);
       
       setFortune(fortuneData);

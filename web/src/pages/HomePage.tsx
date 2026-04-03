@@ -5,15 +5,15 @@ import { Card, CardContent, CardHeader, CardBadge } from '../components/mobile/C
 import { Button } from '../components/mobile/Button';
 import { useAuth } from '../lib/AuthContext';
 import { fortuneApi } from '../api/fortune';
-import { divinationApi } from '../api/divination';
-import type { DailyFortuneInfo, DivinationResult } from '../types/divination';
+import { divinationApi, type DivinationHistoryResponse } from '../api/divination';
+import type { DailyFortuneInfo, DivinationSession } from '../types/divination';
 import './HomePage.css';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, setShowLoginModal } = useAuth();
   const [fortune, setFortune] = useState<DailyFortuneInfo | null>(null);
-  const [recentDivinations, setRecentDivinations] = useState<DivinationResult[]>([]);
+  const [recentDivinations, setRecentDivinations] = useState<DivinationSession[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -30,11 +30,17 @@ export default function HomePage() {
       // 并行加载每日运势和最近占卜
       const [fortuneData, historyData] = await Promise.all([
         fortuneApi.getDaily().catch(() => null),
-        divinationApi.getHistory({ limit: 2, offset: 0 }).catch(() => []),
+        divinationApi.getHistory({ limit: 2, offset: 0 }).catch((): DivinationHistoryResponse => ({
+          sessions: [],
+          total: 0,
+          limit: 2,
+          offset: 0,
+          has_more: false,
+        })),
       ]);
       
       setFortune(fortuneData);
-      setRecentDivinations(Array.isArray(historyData) ? historyData.sessions : []);
+      setRecentDivinations(historyData.sessions);
     } catch (error) {
       console.error('Failed to load home data', error);
     } finally {
@@ -69,7 +75,7 @@ export default function HomePage() {
 
       {/* 未登录提示 */}
       {!isAuthenticated && (
-        <Card variant="info" className="home-login-prompt">
+        <Card variant="elevated" className="home-login-prompt">
           <CardContent>
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔮</div>
@@ -151,9 +157,9 @@ export default function HomePage() {
           <h3 className="home-section-title">最近占卜</h3>
           <div className="home-recent-list">
             {recentDivinations.map((item) => (
-              <Card key={item.session_id} clickable onClick={() => navigate(`/history/${item.session_id}`)}>
+              <Card key={item.id} clickable onClick={() => navigate(`/history/${item.id}`)}>
                 <CardHeader 
-                  title={item.title || '占卜记录'}
+                  title={item.question || '占卜记录'}
                   subtitle={new Date(item.created_at).toLocaleString('zh-CN')}
                   icon="🔮"
                 />

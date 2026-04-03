@@ -50,16 +50,8 @@ final class DivinationStore: ObservableObject {
         result = nil
 
         do {
-            let firstResult = try await service.startIChing(userId: userId, question: trimmed)
-
-            // 低质量问题可能直接返回完整结果
-            if (firstResult.status ?? "completed") == "completed", !firstResult.summary.isEmpty {
-                result = firstResult
-                isLoading = false
-                return
-            }
-
-            startPolling(sessionId: firstResult.sessionId)
+            let accepted = try await service.startIChing(userId: userId, question: trimmed)
+            startPolling(sessionId: accepted.sessionId)
         } catch {
             isLoading = false
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "占卜失败"
@@ -117,23 +109,34 @@ final class DivinationStore: ObservableObject {
     private func startPolling(sessionId: String) {
         pollingTask?.cancel()
         pollingTask = Task {
-            let polled = try? await DivinationPollingHelper.pollResult(
-                sessionId: sessionId,
-                fetch: { id in try await self.service.getResult(sessionId: id) },
-                isCompleted: { current in
-                    let status = current.status ?? "completed"
-                    return status == "completed" || (!current.summary.isEmpty && !current.detail.isEmpty)
-                }
-            )
+            do {
+                let polled = try await DivinationPollingHelper.pollResult(
+                    sessionId: sessionId,
+                    fetch: { id in try await self.service.getResult(sessionId: id) },
+                    isCompleted: { current in
+                        let status = current.status ?? "completed"
+                        return status == "completed" || status == "failed"
+                    }
+                )
 
-            if let finalResult = polled {
+                guard let finalResult = polled else {
+                    isLoading = false
+                    errorMessage = "占卜超时，请稍后在历史记录查看或重试"
+                    return
+                }
+
+                if (finalResult.status ?? "completed") == "failed" {
+                    isLoading = false
+                    errorMessage = finalResult.detail.isEmpty ? "占卜处理失败，请重试" : finalResult.detail
+                    return
+                }
+
                 result = finalResult
                 isLoading = false
-                return
+            } catch {
+                isLoading = false
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? "占卜请求失败，请检查网络后重试"
             }
-
-            isLoading = false
-            errorMessage = "占卜超时，请重试"
         }
     }
 }

@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { QRCodeCanvas } from 'qrcode.react';
 import { shareApi, ShareContent } from '../api/share';
 import { ShareSEO } from '../components/share/ShareSEO';
 import { MobilePage } from '../components/mobile';
@@ -91,6 +90,10 @@ export default function SharePage() {
   };
 
   const handleCopyInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    event.currentTarget.select();
+  };
+
+  const handleCopyInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
     event.currentTarget.select();
   };
 
@@ -352,7 +355,14 @@ export default function SharePage() {
                   <p className="share-actions-text">复制链接发送给朋友，或继续体验你的占卜</p>
                   <div className="share-actions-grid">
                     <div className="share-actions-qr">
-                      <QRCodeCanvas value={shareUrl || window.location.href} size={140} />
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
+                          shareUrl || window.location.href
+                        )}`}
+                        alt="分享二维码"
+                        width={140}
+                        height={140}
+                      />
                       <span>扫码查看</span>
                     </div>
                     <div className="share-actions-buttons">
@@ -366,7 +376,7 @@ export default function SharePage() {
                             value={shareUrl || window.location.href}
                             readOnly
                             onFocus={handleCopyInputFocus}
-                            onClick={handleCopyInputFocus}
+                            onClick={handleCopyInputClick}
                           />
                           <span>请手动复制链接</span>
                         </div>
