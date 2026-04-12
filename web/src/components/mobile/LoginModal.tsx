@@ -16,8 +16,6 @@ export default function LoginModal() {
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  if (!showLoginModal) return null;
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -96,6 +94,8 @@ export default function LoginModal() {
       }
     }
   }, [authExpired, retryCountdown, username]);
+
+  if (!showLoginModal) return null;
 
   return (
     <div className="login-modal-overlay" onClick={handleClose}>
