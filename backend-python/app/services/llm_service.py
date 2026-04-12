@@ -94,6 +94,15 @@ class OpenAICompatibleLLMService(LLMService):
         # 分离 connect/read 超时，读超时留更大余量，降低误判超时
         self.http_timeout = httpx.Timeout(connect=10.0, read=float(timeout), write=10.0, pool=10.0)
         self.client = httpx.AsyncClient(timeout=self.http_timeout)
+
+    async def _post_chat(self, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
+        response = await self.client.post(
+            self.endpoint,
+            headers=headers,
+            json=payload
+        )
+        response.raise_for_status()
+        return response.json()
     
     async def generate(self, prompt: str) -> str:
         """调用LLM生成文本"""
@@ -126,23 +135,15 @@ class OpenAICompatibleLLMService(LLMService):
         max_attempts = 2
         for attempt in range(1, max_attempts + 1):
             try:
-                response = await self.client.post(
-                    self.endpoint,
-                    headers=headers,
-                    json=payload
-                )
+                data = await self._post_chat(headers, payload)
                 duration_ms = int((time.monotonic() - start_time) * 1000)
                 logger.info(
-                    "LLM响应完成 | id=%s | attempt=%s/%s | status=%s | duration_ms=%s",
+                    "LLM响应完成 | id=%s | attempt=%s/%s | duration_ms=%s",
                     request_id,
                     attempt,
                     max_attempts,
-                    response.status_code,
                     duration_ms,
                 )
-                response.raise_for_status()
-
-                data = response.json()
                 logger.info(
                     "LLM响应内容 | id=%s | attempt=%s/%s | body_preview=%s",
                     request_id,
@@ -150,8 +151,50 @@ class OpenAICompatibleLLMService(LLMService):
                     max_attempts,
                     _truncate_text(json.dumps(data, ensure_ascii=False), 1000),
                 )
+
                 if "choices" in data and len(data["choices"]) > 0:
-                    return data["choices"][0]["message"]["content"]
+                    choice0 = data["choices"][0]
+                    finish_reason = choice0.get("finish_reason") if isinstance(choice0, dict) else None
+                    content = choice0.get("message", {}).get("content", "") if isinstance(choice0, dict) else ""
+                    if finish_reason == "length":
+                        logger.warning(
+                            "LLM输出被长度截断，尝试续写 | id=%s | model=%s | finish_reason=%s | max_tokens=%s",
+                            request_id,
+                            self.model_name,
+                            finish_reason,
+                            self.max_tokens,
+                        )
+                        continuation_payload = {
+                            "model": self.model_name,
+                            "messages": [
+                                {"role": "user", "content": prompt},
+                                {"role": "assistant", "content": content},
+                                {
+                                    "role": "user",
+                                    "content": "请从上文末尾继续输出，不要重复已有内容，保持同一格式并尽量完整结束。"
+                                },
+                            ],
+                            "temperature": self.temperature,
+                            "max_tokens": self.max_tokens
+                        }
+                        continuation_data = await self._post_chat(headers, continuation_payload)
+                        continuation_choice = continuation_data.get("choices", [{}])[0]
+                        continuation_text = continuation_choice.get("message", {}).get("content", "")
+                        if continuation_text:
+                            content = f"{content}\n{continuation_text}".strip()
+
+                    usage = data.get("usage") if isinstance(data, dict) else None
+                    if isinstance(usage, dict):
+                        logger.info(
+                            "LLM token使用量 | id=%s | model=%s | prompt_tokens=%s | completion_tokens=%s | total_tokens=%s",
+                            request_id,
+                            self.model_name,
+                            usage.get("prompt_tokens"),
+                            usage.get("completion_tokens"),
+                            usage.get("total_tokens"),
+                        )
+
+                    return content
                 raise ValueError("Invalid response format")
 
             except httpx.ReadTimeout as e:

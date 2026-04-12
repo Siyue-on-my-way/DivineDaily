@@ -5,6 +5,7 @@ import re
 from typing import Optional, Dict, Any
 from datetime import date, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.models.daily_fortune import DailyFortune
 from app.repositories.daily_fortune_repository import DailyFortuneRepository
@@ -98,13 +99,20 @@ class DailyFortuneService:
             "ji": ",".join(algorithm_data["ji"])
         }
         
-        fortune = await self.repository.create(
-            user_id=user_id,
-            fortune_date=fortune_date,
-            **fortune_data
-        )
-        
-        return fortune
+        try:
+            fortune = await self.repository.create(
+                user_id=user_id,
+                fortune_date=fortune_date,
+                **fortune_data
+            )
+            return fortune
+        except IntegrityError:
+            # 并发场景下可能已被其他请求写入同一天记录
+            await self.db.rollback()
+            existing_fortune = await self.repository.get_by_user_and_date(user_id, fortune_date)
+            if existing_fortune:
+                return existing_fortune
+            raise
     
     async def _generate_llm_content(self, prompt: str, algorithm_data: Dict[str, Any]) -> str:
         """调用 LLM 生成内容"""
@@ -352,13 +360,20 @@ class DailyFortuneService:
             "ji": "诸事不宜"
         }
         
-        fortune = await self.repository.create(
-            user_id=user_id,
-            fortune_date=fortune_date,
-            **fortune_data
-        )
-        
-        return fortune
+        try:
+            fortune = await self.repository.create(
+                user_id=user_id,
+                fortune_date=fortune_date,
+                **fortune_data
+            )
+            return fortune
+        except IntegrityError:
+            # 并发场景下可能已被其他请求写入同一天记录
+            await self.db.rollback()
+            existing_fortune = await self.repository.get_by_user_and_date(user_id, fortune_date)
+            if existing_fortune:
+                return existing_fortune
+            raise
     
     async def list_user_fortunes(
         self,

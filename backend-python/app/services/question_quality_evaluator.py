@@ -68,35 +68,70 @@ class QuestionQualityEvaluator:
         
         # 解析 JSON
         try:
-            # 尝试提取 JSON
-            json_match = re.search(r'\{[^}]+\}', response, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
-            else:
-                result = json.loads(response)
-            
+            result = self._parse_json_result(response)
+
             # 验证和规范化
             score = int(result.get('score', 50))
             score = max(0, min(100, score))  # 限制在 0-100
-            
+
             if score >= 80:
                 level = 'high'
             elif score >= 50:
                 level = 'medium'
             else:
                 level = 'low'
-            
+
+            suggestions = result.get('suggestions', [])
+            if not isinstance(suggestions, list):
+                suggestions = [str(suggestions)] if suggestions else []
+
             return {
                 'score': score,
                 'level': level,
-                'reason': result.get('reason', ''),
-                'suggestions': result.get('suggestions', [])
+                'reason': str(result.get('reason', '')),
+                'suggestions': suggestions
             }
-        except Exception as e:
+        except Exception:
             logger.error("解析 LLM 响应失败", extra={"response": response}, exc_info=True)
             # 降级到规则引擎
             return self._evaluate_with_rules(question)
     
+    def _extract_json_candidate(self, text: str) -> Optional[str]:
+        """从响应中提取最可能的 JSON 对象片段（支持 markdown 代码块）"""
+        if not text:
+            return None
+
+        code_block_match = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text, re.IGNORECASE)
+        if code_block_match:
+            return code_block_match.group(1)
+
+        start = text.find('{')
+        end = text.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            return text[start:end + 1]
+
+        return None
+
+    def _repair_truncated_json(self, candidate: str) -> str:
+        """修复常见的截断 JSON（补齐缺失的右花括号）"""
+        open_braces = candidate.count('{')
+        close_braces = candidate.count('}')
+        if open_braces > close_braces:
+            candidate = candidate + ('}' * (open_braces - close_braces))
+        return candidate
+
+    def _parse_json_result(self, response: str) -> Dict[str, Any]:
+        """尽量稳健地解析 LLM JSON 响应"""
+        candidate = self._extract_json_candidate(response)
+        if not candidate:
+            return json.loads(response)
+
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            repaired = self._repair_truncated_json(candidate)
+            return json.loads(repaired)
+
     def _evaluate_with_rules(self, question: str) -> Dict[str, Any]:
         """基于规则的问题质量评估"""
         score = 50  # 基础分

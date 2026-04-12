@@ -45,6 +45,70 @@ def _sanitize_result_for_json(value: Any) -> Any:
         return str(encoded)
 
 
+def _normalize_outcome_label(raw: Optional[str]) -> Optional[str]:
+    """将细粒度吉凶标签归一化为 吉/平/凶"""
+    if not raw:
+        return None
+
+    text = str(raw).strip()
+    if not text:
+        return None
+
+    positive_keywords = ["大吉", "中吉", "小吉", "末吉", "吉"]
+    neutral_keywords = ["中平", "平", "尚可", "一般", "普通"]
+    negative_keywords = ["大凶", "中凶", "小凶", "不利", "凶"]
+
+    if any(k in text for k in positive_keywords):
+        return "吉"
+    if any(k in text for k in negative_keywords):
+        return "凶"
+    if any(k in text for k in neutral_keywords):
+        return "平"
+
+    return None
+
+
+def _extract_session_outcome(session: DivinationSession) -> tuple[Optional[str], Optional[str]]:
+    """为历史列表提取 outcome。
+
+    Returns:
+        (normalized_outcome, raw_outcome_label)
+    """
+    raw_outcome: Optional[str] = None
+
+    # 1) 优先从结构化结果中读取顶层 outcome
+    if isinstance(session.result_data, dict):
+        outcome = session.result_data.get("outcome")
+        if outcome:
+            raw_outcome = str(outcome)
+
+        # 2) 其次从 hexagram_info.outcome 读取
+        if not raw_outcome:
+            hexagram_info = session.result_data.get("hexagram_info")
+            if isinstance(hexagram_info, dict):
+                hex_outcome = hexagram_info.get("outcome")
+                if hex_outcome:
+                    raw_outcome = str(hex_outcome)
+
+    # 3) 最后从摘要文本做弱推断（兼容历史旧数据）
+    if not raw_outcome:
+        summary = session.result_summary or ""
+        if summary:
+            raw_outcome = summary
+
+    normalized = _normalize_outcome_label(raw_outcome)
+    return normalized, raw_outcome
+
+
+def _serialize_history_session(session: DivinationSession) -> dict[str, Any]:
+    """历史列表序列化，补充前端所需字段"""
+    payload = jsonable_encoder(session)
+    normalized_outcome, raw_outcome = _extract_session_outcome(session)
+    payload["outcome"] = normalized_outcome
+    payload["outcome_label"] = raw_outcome
+    return payload
+
+
 async def _run_divination_task(session_id: str, request: CreateDivinationRequest):
     """后台执行占卜任务并回写 session 结果"""
     async with async_session_maker() as task_db:
@@ -74,7 +138,20 @@ async def _run_divination_task(session_id: str, request: CreateDivinationRequest
                 session.result_detail = serializable_result.get("detail")
                 session.result_data = serializable_result
                 await task_db.commit()
-                logger.info("后台占卜任务完成", extra={"session_id": session_id})
+
+                summary_text = session.result_summary or ""
+                detail_text = session.result_detail or ""
+                logger.info(
+                    "后台占卜任务完成",
+                    extra={
+                        "session_id": session_id,
+                        "processing_type": serializable_result.get("processing_type"),
+                        "fallback_used": bool(serializable_result.get("fallback_used", False)),
+                        "summary_len": len(summary_text),
+                        "detail_len": len(detail_text),
+                        "status": session.status,
+                    },
+                )
             else:
                 await task_db.rollback()
                 logger.error("后台占卜任务回写失败：session 不存在", extra={"session_id": session_id})
@@ -229,7 +306,7 @@ async def list_divination_history(
         )
 
         return {
-            "sessions": sessions,
+            "sessions": [_serialize_history_session(session) for session in sessions],
             "total": total_count,
             "limit": limit,
             "offset": offset,

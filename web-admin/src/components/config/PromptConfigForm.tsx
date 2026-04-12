@@ -196,7 +196,6 @@ export default function PromptConfigForm({ config, onSubmit, onCancel }: Props) 
               <input
                 type="number"
                 min="1"
-                max="10000"
                 value={formData.max_tokens}
                 onChange={(e) => setFormData({ ...formData, max_tokens: parseInt(e.target.value) })}
               />

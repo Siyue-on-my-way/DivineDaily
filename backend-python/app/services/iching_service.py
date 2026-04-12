@@ -1,6 +1,7 @@
 """周易六爻服务"""
 
 import hashlib
+import secrets
 from typing import List, Dict, Any, Tuple, Optional
 from app.utils.hexagram_data import TRIGRAMS, HEXAGRAMS, get_hexagram_by_number
 
@@ -73,15 +74,26 @@ class IChingService:
         return mapping.get(coin_sum, 7)
 
     @staticmethod
-    def cast_line_dayan(seed: str, line_index: int) -> Tuple[int, Dict[str, Any]]:
-        """使用大衍筮法（数字模拟）生成单爻，并返回过程记录"""
+    def cast_line_dayan(seed: str, line_index: int, deterministic: bool = False) -> Tuple[int, Dict[str, Any]]:
+        """使用大衍筮法（数字模拟）生成单爻，并返回过程记录。
+
+        Args:
+            seed: 会话种子（仅 deterministic=True 时参与计算）
+            line_index: 爻序号（0~5）
+            deterministic: 是否使用可复现伪随机。False 时使用真随机。
+        """
         stalks = 49
         changes: List[Dict[str, Any]] = []
 
         for step in range(1, 4):
-            rand = IChingService._hash_to_int(f"{seed}-line-{line_index}-step-{step}")
-            # 分两堆，保证左右都大于0
-            left = (rand % (stalks - 1)) + 1
+            if deterministic:
+                rand = IChingService._hash_to_int(f"{seed}-line-{line_index}-step-{step}")
+                # 分两堆，保证左右都大于0
+                left = (rand % (stalks - 1)) + 1
+            else:
+                # 真随机：在 [1, stalks-1] 中均匀选取左手蓍草数
+                left = secrets.randbelow(stalks - 1) + 1
+
             right_before_hang = stalks - left
 
             # 挂一：从右手取1
@@ -124,14 +136,18 @@ class IChingService:
         return line_value, trace
     
     @staticmethod
-    def generate_six_lines(session_id: str, method: str = "dayan") -> Tuple[SixLines, Optional[Dict[str, Any]]]:
+    def generate_six_lines(
+        session_id: str,
+        method: str = "dayan",
+        deterministic: bool = False,
+    ) -> Tuple[SixLines, Optional[Dict[str, Any]]]:
         """生成六爻，支持返回起卦过程记录"""
         lines = []
         yarrow_lines: List[Dict[str, Any]] = []
 
         for i in range(6):
             if method == "dayan":
-                value, trace = IChingService.cast_line_dayan(session_id, i)
+                value, trace = IChingService.cast_line_dayan(session_id, i, deterministic=deterministic)
                 yarrow_lines.append(trace)
             else:
                 value = IChingService.cast_line(session_id, i)
@@ -262,10 +278,19 @@ class IChingService:
         return "\n".join(lines)
     
     @staticmethod
-    def generate_result(session_id: str, question: str, method: str = "dayan") -> Dict[str, Any]:
+    def generate_result(
+        session_id: str,
+        question: str,
+        method: str = "dayan",
+        deterministic: bool = False,
+    ) -> Dict[str, Any]:
         """生成完整的周易占卜结果"""
         # 生成六爻
-        six_lines, yarrow_trace = IChingService.generate_six_lines(session_id, method=method)
+        six_lines, yarrow_trace = IChingService.generate_six_lines(
+            session_id,
+            method=method,
+            deterministic=deterministic,
+        )
 
         # 获取卦象信息
         hexagram_info = IChingService.get_hexagram_info(six_lines)

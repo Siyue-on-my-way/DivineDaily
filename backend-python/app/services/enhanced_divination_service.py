@@ -23,6 +23,43 @@ logger = get_logger("divination")
 
 class EnhancedDivinationService(DivinationService):
     """增强占卜服务（支持智能预处理、路由和LLM）"""
+
+    @staticmethod
+    def _get_hexagram_field(hexagram_info: Any, field: str, default: str = "") -> str:
+        """兼容 dict / Pydantic 对象的卦象字段读取"""
+        if not hexagram_info:
+            return default
+
+        if isinstance(hexagram_info, dict):
+            value = hexagram_info.get(field, default)
+        else:
+            value = getattr(hexagram_info, field, default)
+
+        if value is None:
+            return default
+        return str(value)
+
+    def _build_hexagram_fallback_text(self, hexagram_info: Any) -> str:
+        """基于卦象结构化信息生成有意义的兜底文案"""
+        name = self._get_hexagram_field(hexagram_info, "name", "本卦")
+        summary = self._get_hexagram_field(hexagram_info, "summary", "请结合当前处境稳中求进")
+        outcome = self._get_hexagram_field(hexagram_info, "outcome", "平")
+        upper = self._get_hexagram_field(hexagram_info, "upper_trigram", "")
+        lower = self._get_hexagram_field(hexagram_info, "lower_trigram", "")
+
+        meta = ""
+        if upper or lower:
+            meta = f"（上卦：{upper or '未知'}，下卦：{lower or '未知'}）"
+
+        return (
+            f"## 卦象解读（基础版）\n"
+            f"本次得卦：**{name}**{meta}，吉凶倾向：**{outcome}**。\n\n"
+            f"## 核心提示\n"
+            f"{summary}\n\n"
+            f"## 行动建议\n"
+            f"建议先明确你最关心的目标与时间边界，再按轻重缓急逐步推进；"
+            f"先做低风险尝试，再根据反馈调整下一步。"
+        )
     
     def __init__(self, db: AsyncSession, llm_service: Optional[LLMService] = None):
         # 初始化仓库
@@ -102,6 +139,8 @@ class EnhancedDivinationService(DivinationService):
             
             divination_result = await self.start_divination(request)
         
+        fallback_used = False
+
         # LLM 增强解读
         if self.llm_service and divination_result.hexagram_info:
             try:
@@ -111,23 +150,28 @@ class EnhancedDivinationService(DivinationService):
                     analysis
                 )
                 divination_result.summary = enhanced_summary
-                
+
                 enhanced_detail = await self._enhance_detail(
                     request.question,
                     divination_result.hexagram_info
                 )
                 divination_result.detail = enhanced_detail
-                
+
                 # 更新数据库
                 await self._update_session_in_db(divination_result.session_id, enhanced_summary, enhanced_detail)
-            except Exception as e:
-                logger.error("LLM增强失败", exc_info=True)
-                
-        
+            except Exception:
+                logger.error("LLM增强失败，使用卦象兜底文案", exc_info=True)
+                fallback_text = self._build_hexagram_fallback_text(divination_result.hexagram_info)
+                divination_result.summary = fallback_text
+                divination_result.detail = fallback_text
+                fallback_used = True
+                await self._update_session_in_db(divination_result.session_id, fallback_text, fallback_text)
+
         # 添加质量信息
         result_dict = divination_result.model_dump() if hasattr(divination_result, 'model_dump') else divination_result
         result_dict['quality'] = quality
         result_dict['processing_type'] = 'full_divination'
+        result_dict['fallback_used'] = fallback_used
         
         return result_dict
     
@@ -137,9 +181,21 @@ class EnhancedDivinationService(DivinationService):
         # 执行基础占卜（不做复杂分析）
         divination_result = await self.start_divination(request)
         
+        fallback_used = False
+
         # LLM 基础解读 + 引导
         if self.llm_service and divination_result.hexagram_info:
             try:
+                session_id = getattr(divination_result, 'session_id', '')
+                logger.info(
+                    "简化占卜流程开始LLM解读",
+                    extra={
+                        "session_id": session_id,
+                        "quality_level": quality.get("level"),
+                        "quality_score": quality.get("score"),
+                    },
+                )
+
                 # 构建引导性 Prompt
                 prompt = f"""你是一位占卜师。用户的问题质量尚可但不够明确，请给出占卜建议并引导用户细化问题。
 
@@ -147,8 +203,8 @@ class EnhancedDivinationService(DivinationService):
 问题评估：{quality['reason']}
 改进建议：{', '.join(quality['suggestions'])}
 
-卦象：{divination_result.hexagram_info.get('name', '')}
-卦辞：{divination_result.hexagram_info.get('summary', '')}
+卦象：{self._get_hexagram_field(divination_result.hexagram_info, 'name', '')}
+卦辞：{self._get_hexagram_field(divination_result.hexagram_info, 'summary', '')}
 
 请使用 Markdown 格式回答（150-200字）：
 
@@ -163,16 +219,22 @@ class EnhancedDivinationService(DivinationService):
                 enhanced_summary = await self.llm_service.generate(prompt)
                 divination_result.summary = enhanced_summary
                 divination_result.detail = enhanced_summary  # 简化流程，详情和摘要相同
-                
+
                 # 更新数据库
                 await self._update_session_in_db(divination_result.session_id, enhanced_summary, enhanced_summary)
-            except Exception as e:
-                logger.error("LLM解读失败", exc_info=True)
-        
+            except Exception:
+                logger.error("LLM解读失败，使用卦象兜底文案", exc_info=True)
+                fallback_text = self._build_hexagram_fallback_text(divination_result.hexagram_info)
+                divination_result.summary = fallback_text
+                divination_result.detail = fallback_text
+                fallback_used = True
+                await self._update_session_in_db(divination_result.session_id, fallback_text, fallback_text)
+
         # 添加质量信息
         result_dict = divination_result.model_dump() if hasattr(divination_result, 'model_dump') else divination_result
         result_dict['quality'] = quality
         result_dict['processing_type'] = 'simple_divination'
+        result_dict['fallback_used'] = fallback_used
         
         return result_dict
     
@@ -299,7 +361,7 @@ class EnhancedDivinationService(DivinationService):
                 llm = create_llm_service(
                     llm_config,
                     temperature=prompt_config.temperature,
-                    max_tokens=prompt_config.max_tokens,
+                    max_tokens=max(prompt_config.max_tokens or 0, 1800),
                     timeout=prompt_config.timeout_seconds
                 )
                 
@@ -323,7 +385,7 @@ class EnhancedDivinationService(DivinationService):
             prompt = PromptBuilder.build_answer_prompt(question, hexagram_info, None, analysis)
             return await self.llm_service.generate_answer(prompt)
         
-        return hexagram_info.get('summary', '')
+        return self._get_hexagram_field(hexagram_info, 'summary', '')
     
     async def _enhance_detail(self, question: str, hexagram_info: Dict[str, Any]) -> str:
         """使用LLM增强详情"""
@@ -340,7 +402,7 @@ class EnhancedDivinationService(DivinationService):
                 llm = create_llm_service(
                     llm_config,
                     temperature=prompt_config.temperature,
-                    max_tokens=prompt_config.max_tokens,
+                    max_tokens=max(prompt_config.max_tokens or 0, 2200),
                     timeout=prompt_config.timeout_seconds
                 )
                 
@@ -360,4 +422,4 @@ class EnhancedDivinationService(DivinationService):
             prompt = PromptBuilder.build_detail_prompt(question, hexagram_info)
             return await self.llm_service.generate_detail(prompt)
         
-        return hexagram_info.get('detail', '')
+        return self._get_hexagram_field(hexagram_info, 'detail', '')
