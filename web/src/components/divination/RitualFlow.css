@@ -328,3 +328,24 @@
     transform: scale(1.05);
   }
 }
+
+@media (min-width: 640px) {
+  .ritual-header {
+    padding-top: var(--spacing-xl);
+  }
+
+  .ritual-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .casting-lines {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .line-label {
+    width: 104px;
+  }
+}

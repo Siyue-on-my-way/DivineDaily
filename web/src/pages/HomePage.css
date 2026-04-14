@@ -102,9 +102,136 @@
   color: var(--primary-green);
 }
 
+.home-fortune-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-fortune-empty__header {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.home-fortune-empty__score {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.home-fortune-empty__tip {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d32f2f;
+}
+
+.home-fortune-empty__link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.home-fortune-empty__rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.home-fortune-skeleton {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-fortune-skeleton__line {
+  height: 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-fortune-skeleton__line--lg {
+  height: 18px;
+  width: 92%;
+}
+
+.home-fortune-skeleton__line--sm {
+  width: 60%;
+}
+
+.home-fortune-skeleton__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.home-fortune-skeleton__chip {
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-fortune-skeleton__line::after,
+.home-fortune-skeleton__chip::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  animation: homeFortuneShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes homeFortuneShimmer {
+  0% { left: -40%; }
+  100% { left: 120%; }
+}
+
 /* 最近占卜列表 */
 .home-recent-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+
+@media (min-width: 640px) {
+  .home-divination-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-lg);
+  }
+
+  .home-fortune-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .home-fortune-empty__rows {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .home-welcome-title {
+    font-size: var(--text-xl);
+  }
+
+  .home-welcome-stars {
+    font-size: var(--text-2xl);
+  }
 }

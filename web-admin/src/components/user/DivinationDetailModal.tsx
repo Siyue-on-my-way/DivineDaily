@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react';
-import { UserDivination } from '../../types/user';
+import { getUserDivinationDetail } from '../../api/user';
+import { UserDivination, UserDivinationDetail } from '../../types/user';
 import './DivinationDetailModal.css';
 
 interface DivinationDetailModalProps {
+  userId: number;
   divination: UserDivination | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function DivinationDetailModal({
+  userId,
   divination,
   isOpen,
   onClose,
 }: DivinationDetailModalProps) {
   const [isClosing, setIsClosing] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string>('');
+  const [divinationDetail, setDivinationDetail] = useState<UserDivinationDetail | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +31,26 @@ export default function DivinationDetailModal({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !divination?.id || !userId) return;
+
+    const loadDetail = async () => {
+      setLoadingDetail(true);
+      setDetailError('');
+      try {
+        const detail = await getUserDivinationDetail(userId, divination.id);
+        setDivinationDetail(detail);
+      } catch (error: any) {
+        setDetailError(error?.response?.data?.detail || '加载占卜详情失败');
+        setDivinationDetail(null);
+      } finally {
+        setLoadingDetail(false);
+      }
+    };
+
+    loadDetail();
+  }, [isOpen, userId, divination?.id]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -41,6 +67,11 @@ export default function DivinationDetailModal({
   };
 
   if (!isOpen || !divination) return null;
+
+  const currentDivination = divinationDetail || divination;
+  const hexagramInfo = divinationDetail?.result_data?.hexagram_info;
+  const recommendations = divinationDetail?.result_data?.recommendations || [];
+  const yarrowLines = divinationDetail?.result_data?.yarrow_trace?.lines || [];
 
   const getTypeIcon = (version: string) => {
     if (version.includes('iching') || version.includes('易经') || version === 'CN') return '☯️';
@@ -117,9 +148,9 @@ export default function DivinationDetailModal({
       <div className={`divination-modal ${isClosing ? 'closing' : ''}`}>
         <div className="modal-header">
           <div className="modal-title">
-            <span className="modal-icon">{getTypeIcon(divination.version)}</span>
-            <h2>{getTypeName(divination.version)}</h2>
-            {getStatusBadge(divination.status)}
+            <span className="modal-icon">{getTypeIcon(currentDivination.version)}</span>
+            <h2>{getTypeName(currentDivination.version)}</h2>
+            {getStatusBadge(currentDivination.status)}
           </div>
           <button className="close-btn" onClick={handleClose}>
             ✕
@@ -127,6 +158,24 @@ export default function DivinationDetailModal({
         </div>
 
         <div className="modal-body">
+          {loadingDetail && (
+            <div className="detail-section">
+              <div className="processing-box">
+                <span className="processing-icon">⏳</span>
+                <p>正在加载完整详情...</p>
+              </div>
+            </div>
+          )}
+
+          {!!detailError && (
+            <div className="detail-section">
+              <div className="error-box">
+                <span className="error-icon">⚠️</span>
+                <p>{detailError}</p>
+              </div>
+            </div>
+          )}
+
           {/* 基本信息 */}
           <div className="detail-section">
             <div className="section-header">
@@ -136,20 +185,20 @@ export default function DivinationDetailModal({
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">占卜ID:</span>
-                <span className="info-value">{divination.id}</span>
+                <span className="info-value">{currentDivination.id}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">占卜时间:</span>
-                <span className="info-value">{formatDate(divination.created_at)}</span>
+                <span className="info-value">{formatDate(currentDivination.created_at)}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">占卜类型:</span>
-                <span className="info-value">{getTypeName(divination.version)}</span>
+                <span className="info-value">{getTypeName(currentDivination.version)}</span>
               </div>
-              {divination.event_type && (
+              {currentDivination.event_type && (
                 <div className="info-item">
                   <span className="info-label">事件类型:</span>
-                  <span className="info-value">{divination.event_type}</span>
+                  <span className="info-value">{currentDivination.event_type}</span>
                 </div>
               )}
             </div>
@@ -162,25 +211,103 @@ export default function DivinationDetailModal({
               <h3>占卜问题</h3>
             </div>
             <div className="question-box">
-              {divination.question}
+              {currentDivination.question}
             </div>
           </div>
 
-          {/* 结果摘要 */}
-          {divination.result_summary && (
+          {/* 卦象信息 */}
+          {hexagramInfo && (
             <div className="detail-section">
               <div className="section-header">
-                <span className="section-icon">✨</span>
-                <h3>占卜结果</h3>
+                <span className="section-icon">🧿</span>
+                <h3>卦象信息</h3>
               </div>
-              <div className="result-box">
-                {renderMarkdown(divination.result_summary)}
+              <div className="info-grid">
+                <div className="info-item"><span className="info-label">卦号</span><span className="info-value">{hexagramInfo.number ?? '-'}</span></div>
+                <div className="info-item"><span className="info-label">卦名</span><span className="info-value">{hexagramInfo.name || '-'}</span></div>
+                <div className="info-item"><span className="info-label">上卦</span><span className="info-value">{hexagramInfo.upper_trigram || '-'}</span></div>
+                <div className="info-item"><span className="info-label">下卦</span><span className="info-value">{hexagramInfo.lower_trigram || '-'}</span></div>
+                <div className="info-item"><span className="info-label">吉凶</span><span className="info-value">{hexagramInfo.outcome || '-'}</span></div>
+                <div className="info-item"><span className="info-label">五行</span><span className="info-value">{hexagramInfo.wuxing || '-'}</span></div>
               </div>
             </div>
           )}
 
-          {/* 如果没有结果 */}
-          {!divination.result_summary && divination.status === 'completed' && (
+          {/* 变爻与起卦过程 */}
+          {(hexagramInfo?.changing_lines?.length || yarrowLines.length) && (
+            <div className="detail-section">
+              <div className="section-header">
+                <span className="section-icon">📐</span>
+                <h3>变爻与起卦过程</h3>
+              </div>
+              <div className="result-box">
+                {hexagramInfo?.changing_lines?.length ? (
+                  <p className="md-p">变爻：第 {hexagramInfo.changing_lines.map((i) => i + 1).join('、')} 爻</p>
+                ) : (
+                  <p className="md-p">无变爻</p>
+                )}
+                {yarrowLines.length > 0 && (
+                  <div>
+                    <p className="md-p"><strong>起卦过程（六爻）</strong></p>
+                    <ul>
+                      {yarrowLines.map((line, idx) => (
+                        <li key={`${idx}-${line.line_index}`} className="md-li">
+                          第{line.line_index ?? idx + 1}爻：{line.line_type || line.line_value || '-'}
+                          {line.is_changing ? '（变）' : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 建议 */}
+          {recommendations.length > 0 && (
+            <div className="detail-section">
+              <div className="section-header">
+                <span className="section-icon">🧭</span>
+                <h3>建议</h3>
+              </div>
+              <div className="result-box">
+                {recommendations.map((item, idx) => (
+                  <div key={`rec-${idx}`}>
+                    {item.title && <h4 className="md-h4">{item.title}</h4>}
+                    {item.content && <p className="md-p">{item.content}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 原始摘要 */}
+          {currentDivination.result_summary && (
+            <div className="detail-section">
+              <div className="section-header">
+                <span className="section-icon">✨</span>
+                <h3>原始摘要</h3>
+              </div>
+              <div className="result-box">
+                {renderMarkdown(currentDivination.result_summary)}
+              </div>
+            </div>
+          )}
+
+          {/* 原始详情 */}
+          {divinationDetail?.result_detail && (
+            <div className="detail-section">
+              <div className="section-header">
+                <span className="section-icon">📜</span>
+                <h3>原始详情</h3>
+              </div>
+              <div className="result-box">
+                {renderMarkdown(divinationDetail.result_detail)}
+              </div>
+            </div>
+          )}
+
+          {!currentDivination.result_summary && currentDivination.status === 'completed' && (
             <div className="detail-section">
               <div className="empty-result">
                 <span className="empty-icon">📭</span>
@@ -189,8 +316,7 @@ export default function DivinationDetailModal({
             </div>
           )}
 
-          {/* 处理中状态 */}
-          {divination.status === 'processing' && (
+          {currentDivination.status === 'processing' && (
             <div className="detail-section">
               <div className="processing-box">
                 <span className="processing-icon">⏳</span>
@@ -199,8 +325,7 @@ export default function DivinationDetailModal({
             </div>
           )}
 
-          {/* 失败状态 */}
-          {divination.status === 'failed' && (
+          {currentDivination.status === 'failed' && (
             <div className="detail-section">
               <div className="error-box">
                 <span className="error-icon">❌</span>

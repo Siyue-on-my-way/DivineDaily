@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any, List
 
 from app.core.logger import get_logger
 logger = get_logger("llm")
+OPENAI_COMPATIBLE_MAX_TOKENS_LIMIT = 65535
 
 
 def _mask_api_key(api_key: Optional[str]) -> str:
@@ -24,6 +25,19 @@ def _truncate_text(text: Optional[str], max_len: int = 800) -> str:
     if len(text) <= max_len:
         return text
     return text[:max_len] + "...<truncated>"
+
+
+def _normalize_max_tokens(raw_max_tokens: Any) -> int:
+    """归一化 max_tokens，避免超限导致下游 400。"""
+    try:
+        value = int(raw_max_tokens)
+    except (TypeError, ValueError):
+        return 2000
+
+    if value < 1:
+        return 2000
+
+    return min(value, OPENAI_COMPATIBLE_MAX_TOKENS_LIMIT)
 
 
 
@@ -46,17 +60,6 @@ class LLMService(ABC):
     async def close(self):
         """关闭连接"""
         pass
-
-
-class MockLLMService(LLMService):
-    """Mock LLM服务（用于测试和降级）"""
-
-    async def generate(self, prompt: str) -> str:
-        return """## 👋 友好提示
-当前智能解读服务响应较慢，已为您切换到快速回复模式。
-
-## 💡 建议
-请稍后重试，或将问题描述得更具体（例如明确“我该不该做某个选择”），通常可以更快得到完整、准确的占卜解读。"""
 
 
 def build_chat_completions_url(endpoint: str, url_type: Optional[str] = "openai_compatible") -> str:
@@ -133,6 +136,7 @@ class OpenAICompatibleLLMService(LLMService):
         )
 
         max_attempts = 2
+        last_error: Optional[Exception] = None
         for attempt in range(1, max_attempts + 1):
             try:
                 data = await self._post_chat(headers, payload)
@@ -198,6 +202,7 @@ class OpenAICompatibleLLMService(LLMService):
                 raise ValueError("Invalid response format")
 
             except httpx.ReadTimeout as e:
+                last_error = e
                 duration_ms = int((time.monotonic() - start_time) * 1000)
                 logger.info(
                     "LLM读取超时 | id=%s | attempt=%s/%s | duration_ms=%s | timeout=%ss | error=%s",
@@ -212,6 +217,7 @@ class OpenAICompatibleLLMService(LLMService):
                     break
             except Exception as e:
                 import traceback
+                last_error = e
                 duration_ms = int((time.monotonic() - start_time) * 1000)
                 logger.info(
                     "LLM调用失败 | id=%s | attempt=%s/%s | duration_ms=%s | error=%s: %s",
@@ -223,11 +229,13 @@ class OpenAICompatibleLLMService(LLMService):
                     str(e),
                 )
                 logger.info(f"详细错误:\n{traceback.format_exc()}")
-                # 非超时错误不重试，直接降级
-                return await MockLLMService().generate(prompt)
+                # 非超时错误不重试，直接抛出
+                break
 
-        # 超时重试后仍失败，降级返回友好文案
-        return await MockLLMService().generate(prompt)
+        # 不再降级返回固定文案，直接抛错给上层处理
+        if last_error:
+            raise last_error
+        raise RuntimeError("LLM调用失败，未获取到有效响应")
     
     async def close(self):
         """关闭HTTP客户端"""
@@ -252,19 +260,18 @@ def create_llm_service(
     Returns:
         LLMService实例
     """
-    # 如果没有配置，返回Mock服务
+    # 如果没有配置，直接抛错，避免静默降级
     if not llm_config:
-        return MockLLMService()
+        raise ValueError("LLM配置不存在")
     
-    # 如果配置未启用，返回Mock服务
+    # 如果配置未启用，直接抛错，避免静默降级
     if not llm_config.is_enabled:
-        return MockLLMService()
+        raise ValueError("LLM配置未启用")
     
     # 获取配置参数
     raw_endpoint = llm_config.endpoint
     if not raw_endpoint:
-        logger.info("LLM endpoint 未配置，使用Mock服务")
-        return MockLLMService()
+        raise ValueError("LLM endpoint 未配置")
 
     endpoint = build_chat_completions_url(raw_endpoint, llm_config.url_type)
     api_key = llm_config.api_key
@@ -276,6 +283,15 @@ def create_llm_service(
     
     if max_tokens is None:
         max_tokens = llm_config.extra_config.get("max_tokens", 2000) if llm_config.extra_config else 2000
+    normalized_max_tokens = _normalize_max_tokens(max_tokens)
+    if normalized_max_tokens != max_tokens:
+        logger.warning(
+            "LLM max_tokens 超出范围，已自动钳制 | model=%s | original=%s | normalized=%s",
+            model_name,
+            max_tokens,
+            normalized_max_tokens,
+        )
+    max_tokens = normalized_max_tokens
     
     if timeout is None:
         timeout = llm_config.extra_config.get("timeout", 30) if llm_config.extra_config else 30
@@ -293,11 +309,9 @@ def create_llm_service(
             timeout=timeout
         )
     else:
-        # 未知provider，返回Mock服务
-        logger.info(f"未知的LLM provider: {provider}，使用Mock服务")
-        return MockLLMService()
+        raise ValueError(f"未知的LLM provider: {provider}")
 
 
 def get_llm_service() -> LLMService:
-    """获取默认LLM服务实例（Mock）"""
-    return MockLLMService()
+    """保留接口兼容：默认不再提供降级服务"""
+    raise ValueError("默认LLM服务不可用，请先配置可用的LLM")

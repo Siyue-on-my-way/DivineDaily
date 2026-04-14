@@ -198,6 +198,95 @@
   border-left: 4px solid var(--primary-green);
 }
 
+.home-fortune-summary--skeleton {
+  position: relative;
+  overflow: hidden;
+  border-left-color: rgba(0, 0, 0, 0.08);
+}
+
+.home-fortune-skeleton__line {
+  height: 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 10px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-fortune-skeleton__line--lg {
+  height: 18px;
+  width: 92%;
+}
+
+.home-fortune-skeleton__line--sm {
+  width: 58%;
+}
+
+.home-fortune-skeleton__block {
+  width: 56px;
+  height: 18px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-fortune-lucky-item--skeleton {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.35) 0%, rgba(139, 195, 74, 0.35) 100%);
+}
+
+.home-fortune-skeleton__line::after,
+.home-fortune-skeleton__block::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: homeFortuneShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes homeFortuneShimmer {
+  0% { left: -40%; }
+  100% { left: 120%; }
+}
+
+.home-fortune-summary--empty {
+  border-left-color: #f44336;
+}
+
+.home-fortune-empty-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.home-fortune-empty-tip {
+  color: #d32f2f;
+  font-weight: 800;
+}
+
+.home-fortune-empty-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.home-fortune-empty-link:hover {
+  opacity: 0.9;
+}
+
 .home-fortune-details {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

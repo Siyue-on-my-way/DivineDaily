@@ -296,6 +296,44 @@ async def get_user_divinations(
     )
 
 
+@router.get("/users/{user_id}/divinations/{session_id}", tags=["用户管理"])
+async def get_user_divination_detail(
+    user_id: int,
+    session_id: str,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取用户单条占卜详情（含 result_detail/result_data）"""
+    from sqlalchemy import select
+    from app.models.divination import DivinationSession
+
+    result = await db.execute(
+        select(DivinationSession).where(
+            DivinationSession.id == session_id,
+            DivinationSession.user_id == str(user_id),
+        )
+    )
+    session = result.scalar_one_or_none()
+
+    if not session:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="占卜记录不存在")
+
+    return {
+        "id": session.id,
+        "user_id": session.user_id,
+        "version": session.version,
+        "question": session.question,
+        "event_type": session.event_type,
+        "status": session.status,
+        "result_summary": session.result_summary,
+        "result_detail": session.result_detail,
+        "result_data": session.result_data,
+        "created_at": session.created_at,
+        "updated_at": session.updated_at,
+    }
+
+
 @router.get("/users/{user_id}/login-history", response_model=LoginHistoryListResponse, tags=["用户管理"])
 async def get_user_login_history(
     user_id: int,

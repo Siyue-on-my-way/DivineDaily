@@ -150,6 +150,7 @@ export default function UserDetailPage() {
 
       {/* 占卜详情弹窗 */}
       <DivinationDetailModal
+        userId={parseInt(userId || '0')}
         divination={selectedDivination}
         isOpen={isModalOpen}
         onClose={handleCloseModal}

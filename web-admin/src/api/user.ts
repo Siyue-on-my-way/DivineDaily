@@ -95,6 +95,35 @@ export interface UserDivination {
   created_at: string;
 }
 
+export interface UserDivinationDetail extends UserDivination {
+  user_id?: string;
+  result_detail?: string;
+  result_data?: {
+    hexagram_info?: {
+      number?: number;
+      name?: string;
+      upper_trigram?: string;
+      lower_trigram?: string;
+      outcome?: string;
+      wuxing?: string;
+      changing_lines?: number[];
+      line_values?: number[];
+    };
+    recommendations?: Array<{ title?: string; content?: string }>;
+    yarrow_trace?: {
+      method?: string;
+      lines?: Array<{
+        line_index?: number;
+        line_value?: number;
+        line_type?: string;
+        is_changing?: boolean;
+      }>;
+    };
+    [key: string]: any;
+  };
+  updated_at?: string;
+}
+
 export interface CreateUserData {
   username: string;
   email?: string;
@@ -238,6 +267,17 @@ export const getUserDivinations = async (
 };
 
 /**
+ * 获取用户占卜详情（单条）
+ */
+export const getUserDivinationDetail = async (
+  userId: number,
+  sessionId: string
+): Promise<UserDivinationDetail> => {
+  const response = await axios.get(`/admin/users/${userId}/divinations/${sessionId}`);
+  return response.data;
+};
+
+/**
  * 获取用户登录历史
  */
 export const getUserLoginHistory = async (
@@ -324,6 +364,7 @@ export default {
   batchChangeStatus,
   getUserStats,
   getUserDivinations,
+  getUserDivinationDetail,
   getUserLoginHistory,
   getAuditLogs,
   exportUsersToCSV,

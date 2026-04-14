@@ -83,3 +83,32 @@ export interface UserDivination {
   created_at: string;
 }
 
+export interface UserDivinationDetail extends UserDivination {
+  user_id?: string;
+  result_detail?: string;
+  result_data?: {
+    hexagram_info?: {
+      number?: number;
+      name?: string;
+      upper_trigram?: string;
+      lower_trigram?: string;
+      outcome?: string;
+      wuxing?: string;
+      changing_lines?: number[];
+      line_values?: number[];
+    };
+    recommendations?: Array<{ title?: string; content?: string }>;
+    yarrow_trace?: {
+      method?: string;
+      lines?: Array<{
+        line_index?: number;
+        line_value?: number;
+        line_type?: string;
+        is_changing?: boolean;
+      }>;
+    };
+    [key: string]: any;
+  };
+  updated_at?: string;
+}
+

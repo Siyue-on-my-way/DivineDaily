@@ -3,15 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { fortuneApi } from '../api/fortune';
 import { divinationApi } from '../api/divination';
+import { profileApi } from '../api/profile';
 import type { DailyFortuneInfo, DivinationSession } from '../types/divination';
 import { Card, CardContent, CardHeader } from '../components/mobile/Card';
 import { Button } from '../components/mobile/Button';
+import { toast } from '../hooks/useToast';
+import { formatApiErrorMessage } from '../utils/apiError';
 import './HomePageDesktop.css';
 
 export default function HomePageDesktop() {
   const navigate = useNavigate();
   const { isAuthenticated, user, setShowLoginModal } = useAuth();
   const [fortune, setFortune] = useState<DailyFortuneInfo | null>(null);
+  const [hasBirthProfile, setHasBirthProfile] = useState<boolean | null>(null);
   const [recentDivinations, setRecentDivinations] = useState<DivinationSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, thisWeek: 0, thisMonth: 0 });
@@ -27,12 +31,27 @@ export default function HomePageDesktop() {
     
     setLoading(true);
     try {
-      const [fortuneData, historyResponse] = await Promise.all([
-        fortuneApi.getDaily().catch(() => null),
-        divinationApi.getHistory({ limit: 5 }).catch(() => ({ sessions: [], total: 0, limit: 5, offset: 0, has_more: false })),
+      const [profile, historyResponse] = await Promise.all([
+        profileApi.getProfile(user.id).catch(() => null),
+        divinationApi.getHistory({ limit: 5 }).catch((err) => {
+          toast.error(formatApiErrorMessage(err, '占卜历史加载失败'));
+          return { sessions: [], total: 0, limit: 5, offset: 0, has_more: false };
+        }),
       ]);
-      
-      setFortune(fortuneData);
+
+      const profileHasBirthDate = Boolean(profile?.birth_date);
+      setHasBirthProfile(profileHasBirthDate);
+
+      if (!profileHasBirthDate) {
+        setFortune(null);
+      } else {
+        const fortuneData = await fortuneApi.getDaily().catch((err) => {
+          toast.error(formatApiErrorMessage(err, '今日运势加载失败'));
+          return null;
+        });
+        setFortune(fortuneData);
+      }
+
       const history = historyResponse.sessions;
       setRecentDivinations(history);
       
@@ -77,6 +96,9 @@ export default function HomePageDesktop() {
           </h1>
           <p className="home-hero__subtitle">
             让占卜更智能 - 结合传统玄学与现代AI的智能占卜平台
+          </p>
+          <p className="home-hero__subtitle">
+            欢迎感兴趣的巫婆巫师们与思越共建, 微信: StayOOOptimistic
           </p>
             <div className="home-hero__actions">
             <Button variant="primary" size="lg" onClick={handleStartDivination}>
@@ -123,37 +145,96 @@ export default function HomePageDesktop() {
           </Card>
               
           {/* 每日运势 */}
-          {fortune && (
+          {isAuthenticated && (
             <Card>
-              <CardHeader title="今日运势" subtitle={`综合评分: ${fortune.overall_score}分`} />
+              <CardHeader
+                title="今日运势"
+                subtitle={`综合评分: ${fortune?.overall_score ?? 0}分`}
+              />
               <CardContent>
               <div className="home-fortune-content">
-                  <div className="home-fortune-summary">
-                    {fortune.content}
-                </div>
+                  {hasBirthProfile === null ? (
+                    <div className="home-fortune-summary home-fortune-summary--skeleton" aria-label="正在加载档案">
+                      <div className="home-fortune-skeleton__line home-fortune-skeleton__line--lg" />
+                      <div className="home-fortune-skeleton__line" />
+                      <div className="home-fortune-skeleton__line home-fortune-skeleton__line--sm" />
+                    </div>
+                  ) : !hasBirthProfile ? (
+                    <div className="home-fortune-summary home-fortune-summary--empty">
+                      <div className="home-fortune-empty-line">
+                        综合运势:{' '}
+                        <span className="home-fortune-empty-tip">
+                          请至「
+                          <button
+                            type="button"
+                            className="home-fortune-empty-link"
+                            onClick={() => navigate('/profile')}
+                          >
+                            个人中心
+                          </button>
+                          」补齐生日档案后查看.
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="home-fortune-summary">
+                      {fortune?.content}
+                    </div>
+                  )}
 
                 <div className="home-fortune-lucky">
-                  <div className="home-fortune-lucky-item">
-                      <div className="home-fortune-lucky-item__label">幸运色</div>
-                      <div className="home-fortune-lucky-item__value">{fortune.lucky_color || '-'}</div>
-                  </div>
-                  <div className="home-fortune-lucky-item">
-                      <div className="home-fortune-lucky-item__label">幸运数字</div>
-                      <div className="home-fortune-lucky-item__value">{fortune.lucky_number || '-'}</div>
-                  </div>
-                  <div className="home-fortune-lucky-item">
-                      <div className="home-fortune-lucky-item__label">幸运方位</div>
-                      <div className="home-fortune-lucky-item__value">{fortune.lucky_direction || '-'}</div>
-                  </div>
-                  <div className="home-fortune-lucky-item">
-                      <div className="home-fortune-lucky-item__label">幸运时辰</div>
-                      <div className="home-fortune-lucky-item__value">{fortune.lucky_time || '-'}</div>
-                  </div>
+                  {hasBirthProfile === null ? (
+                    <>
+                      {[0, 1, 2, 3].map((idx) => (
+                        <div key={idx} className="home-fortune-lucky-item home-fortune-lucky-item--skeleton" aria-hidden="true">
+                          <div className="home-fortune-lucky-item__label">　</div>
+                          <div className="home-fortune-lucky-item__value home-fortune-skeleton__block" />
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <div className="home-fortune-lucky-item">
+                          <div className="home-fortune-lucky-item__label">幸运色</div>
+                          <div className="home-fortune-lucky-item__value">{hasBirthProfile ? (fortune?.lucky_color || '-') : '无'}</div>
+                      </div>
+                      <div className="home-fortune-lucky-item">
+                          <div className="home-fortune-lucky-item__label">幸运数字</div>
+                          <div className="home-fortune-lucky-item__value">{hasBirthProfile ? (fortune?.lucky_number || '-') : '无'}</div>
+                      </div>
+                      <div className="home-fortune-lucky-item">
+                          <div className="home-fortune-lucky-item__label">幸运方位</div>
+                          <div className="home-fortune-lucky-item__value">{hasBirthProfile ? (fortune?.lucky_direction || '-') : '无'}</div>
+                      </div>
+                      <div className="home-fortune-lucky-item">
+                          <div className="home-fortune-lucky-item__label">幸运时辰</div>
+                          <div className="home-fortune-lucky-item__value">{hasBirthProfile ? (fortune?.lucky_time || '-') : '无'}</div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                  {(fortune.yi || fortune.ji) && (
+                  {hasBirthProfile === null ? (
+                    <div className="home-fortune-advice" aria-label="正在加载宜忌">
+                      <div className="home-fortune-advice__section home-fortune-advice__section--yi">
+                        <h4>✓ 宜</h4>
+                        <ul>
+                          <li className="home-fortune-skeleton__line" style={{ width: '70%' }} />
+                          <li className="home-fortune-skeleton__line" style={{ width: '55%' }} />
+                        </ul>
+                      </div>
+                      <div className="home-fortune-advice__section home-fortune-advice__section--ji">
+                        <h4>✗ 忌</h4>
+                        <ul>
+                          <li className="home-fortune-skeleton__line" style={{ width: '65%' }} />
+                          <li className="home-fortune-skeleton__line" style={{ width: '50%' }} />
+                        </ul>
+                      </div>
+                    </div>
+                  ) : hasBirthProfile ? (
+                    (fortune?.yi || fortune?.ji) && (
                   <div className="home-fortune-advice">
-                      {fortune.yi && parseCommaSeparated(fortune.yi).length > 0 && (
+                      {fortune?.yi && parseCommaSeparated(fortune.yi).length > 0 && (
                       <div className="home-fortune-advice__section home-fortune-advice__section--yi">
                           <h4>✓ 宜</h4>
                         <ul>
@@ -163,7 +244,7 @@ export default function HomePageDesktop() {
                         </ul>
                       </div>
                     )}
-                      {fortune.ji && parseCommaSeparated(fortune.ji).length > 0 && (
+                      {fortune?.ji && parseCommaSeparated(fortune.ji).length > 0 && (
                       <div className="home-fortune-advice__section home-fortune-advice__section--ji">
                           <h4>✗ 忌</h4>
                         <ul>
@@ -174,7 +255,19 @@ export default function HomePageDesktop() {
                       </div>
                     )}
                   </div>
-                )}
+                    )
+                  ) : (
+                    <div className="home-fortune-advice">
+                      <div className="home-fortune-advice__section home-fortune-advice__section--yi">
+                        <h4>✓ 宜</h4>
+                        <ul><li>无</li></ul>
+                      </div>
+                      <div className="home-fortune-advice__section home-fortune-advice__section--ji">
+                        <h4>✗ 忌</h4>
+                        <ul><li>无</li></ul>
+                      </div>
+                    </div>
+                  )}
               </div>
               </CardContent>
             </Card>

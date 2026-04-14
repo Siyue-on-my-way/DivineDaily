@@ -11,6 +11,7 @@ import { useDivinationPolling } from '../../hooks/useDivinationPolling';
 import { toast } from '../../hooks/useToast';
 import axiosInstance from '../../lib/axios';
 import type { DivinationResult } from '../../types/divination';
+import { formatApiErrorMessage } from '../../utils/apiError';
 import './RitualFlow.css';
 
 type Stage = 'QUESTION' | 'RITUAL' | 'CASTING' | 'LOADING' | 'REVEAL' | 'RESULT';
@@ -215,13 +216,13 @@ export default function RitualFlow() {
       setSessionId(sid);
     } catch (err: any) {
       setStage('QUESTION');
-      const errorMessage = err.response?.data?.detail || err.response?.data?.message;
       if (err.response?.status === 500) toast.error('服务器繁忙，请稍后重试');
       else if (err.response?.status === 401) {
         toast.error('登录已过期，请重新登录');
         setShowLoginModal(true);
-      } else if (errorMessage) toast.error(errorMessage);
-      else toast.error('占卜失败，请检查网络连接后重试');
+      } else {
+        toast.error(formatApiErrorMessage(err, '占卜失败，请检查网络连接后重试'));
+      }
     }
   };
 

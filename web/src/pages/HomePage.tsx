@@ -6,6 +6,7 @@ import { Button } from '../components/mobile/Button';
 import { useAuth } from '../lib/AuthContext';
 import { fortuneApi } from '../api/fortune';
 import { divinationApi, type DivinationHistoryResponse } from '../api/divination';
+import { profileApi } from '../api/profile';
 import type { DailyFortuneInfo, DivinationSession } from '../types/divination';
 import './HomePage.css';
 
@@ -13,6 +14,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, setShowLoginModal } = useAuth();
   const [fortune, setFortune] = useState<DailyFortuneInfo | null>(null);
+  const [hasBirthProfile, setHasBirthProfile] = useState<boolean | null>(null);
   const [recentDivinations, setRecentDivinations] = useState<DivinationSession[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -27,9 +29,9 @@ export default function HomePage() {
     
     setLoading(true);
     try {
-      // 并行加载每日运势和最近占卜
-      const [fortuneData, historyData] = await Promise.all([
-        fortuneApi.getDaily().catch(() => null),
+      // 并行加载档案和最近占卜
+      const [profile, historyData] = await Promise.all([
+        profileApi.getProfile(user.id).catch(() => null),
         divinationApi.getHistory({ limit: 2, offset: 0 }).catch((): DivinationHistoryResponse => ({
           sessions: [],
           total: 0,
@@ -39,7 +41,14 @@ export default function HomePage() {
         })),
       ]);
       
-      setFortune(fortuneData);
+      const profileHasBirthDate = Boolean(profile?.birth_date);
+      setHasBirthProfile(profileHasBirthDate);
+      if (!profileHasBirthDate) {
+        setFortune(null);
+      } else {
+        const fortuneData = await fortuneApi.getDaily().catch(() => null);
+        setFortune(fortuneData);
+      }
       setRecentDivinations(historyData.sessions);
     } catch (error) {
       console.error('Failed to load home data', error);
@@ -120,32 +129,63 @@ export default function HomePage() {
       </div>
 
       {/* 每日运势 */}
-      {isAuthenticated && fortune && (
+      {isAuthenticated && (
         <div className="home-section">
           <h3 className="home-section-title">每日运势</h3>
           <Card>
             <CardContent>
-              <div className="home-fortune-grid">
-                <div className="home-fortune-item">
-                  <span className="home-fortune-label">财运</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.wealth_score)}</span>
+              {hasBirthProfile === null ? (
+                <div className="home-fortune-skeleton" aria-label="正在加载档案">
+                  <div className="home-fortune-skeleton__line home-fortune-skeleton__line--lg" />
+                  <div className="home-fortune-skeleton__line" />
+                  <div className="home-fortune-skeleton__line home-fortune-skeleton__line--sm" />
+                  <div className="home-fortune-skeleton__grid">
+                    {[0, 1, 2, 3].map((idx) => (
+                      <div key={idx} className="home-fortune-skeleton__chip" />
+                    ))}
+                  </div>
                 </div>
-                <div className="home-fortune-item">
-                  <span className="home-fortune-label">事业</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.career_score)}</span>
+              ) : !hasBirthProfile ? (
+                <div className="home-fortune-empty">
+                  <div className="home-fortune-empty__header">今日运势</div>
+                  <div className="home-fortune-empty__score">综合评分: 0分</div>
+                  <div className="home-fortune-empty__tip">
+                    综合运势: <strong>请至「<button type="button" className="home-fortune-empty__link" onClick={() => navigate('/profile')}>个人中心</button>」补齐生日档案后查看.</strong>
+                  </div>
+                  <div className="home-fortune-empty__rows">
+                    <div>幸运色: 无</div>
+                    <div>幸运数字: 无</div>
+                    <div>幸运方位: 无</div>
+                    <div>幸运时辰: 无</div>
+                    <div>宜: 无</div>
+                    <div>忌: 无</div>
+                  </div>
                 </div>
-                <div className="home-fortune-item">
-                  <span className="home-fortune-label">感情</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.love_score)}</span>
-                </div>
-                <div className="home-fortune-item">
-                  <span className="home-fortune-label">健康</span>
-                  <span className="home-fortune-stars">{getStarRating(fortune.health_score)}</span>
-                </div>
-              </div>
-              <p style={{ marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                {fortune.content}
-              </p>
+              ) : fortune ? (
+                <>
+                  <div className="home-fortune-grid">
+                    <div className="home-fortune-item">
+                      <span className="home-fortune-label">财运</span>
+                      <span className="home-fortune-stars">{getStarRating(fortune.wealth_score)}</span>
+                    </div>
+                    <div className="home-fortune-item">
+                      <span className="home-fortune-label">事业</span>
+                      <span className="home-fortune-stars">{getStarRating(fortune.career_score)}</span>
+                    </div>
+                    <div className="home-fortune-item">
+                      <span className="home-fortune-label">感情</span>
+                      <span className="home-fortune-stars">{getStarRating(fortune.love_score)}</span>
+                    </div>
+                    <div className="home-fortune-item">
+                      <span className="home-fortune-label">健康</span>
+                      <span className="home-fortune-stars">{getStarRating(fortune.health_score)}</span>
+                    </div>
+                  </div>
+                  <p style={{ marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                    {fortune.content}
+                  </p>
+                </>
+              ) : null}
             </CardContent>
           </Card>
         </div>

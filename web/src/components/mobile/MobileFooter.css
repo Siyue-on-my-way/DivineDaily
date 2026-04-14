@@ -1,22 +1,25 @@
 /* 移动端底部导航栏 */
 
 .mobile-footer {
-  /* position: fixed;  移除fixed定位 */
-  /* bottom: 0; */
-  /* left: 0; */
-  /* right: 0; */
-  height: 64px;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border-light);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: calc(64px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--bg-secondary) 88%, white 12%);
+  border-top: 1px solid color-mix(in srgb, var(--border-light) 80%, rgba(255, 255, 255, 0.6) 20%);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08), 0 -2px 8px rgba(0, 0, 0, 0.05);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
   z-index: var(--z-sticky);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 var(--spacing-sm);
-  flex-shrink: 0; /* 防止被压缩 */
-  width: 100%;
+  padding: 0 var(--spacing-sm) env(safe-area-inset-bottom);
+  flex-shrink: 0;
+  width: min(100%, var(--layout-max-width, 1200px));
 }
+
 
 .mobile-footer__item {
   display: flex;

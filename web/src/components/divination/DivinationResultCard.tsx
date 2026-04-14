@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { DivinationResult, HexagramInfo, YarrowProcessTrace, YarrowLineTrace } from '../../types/divination';
@@ -25,6 +25,23 @@ export default function DivinationResultCard({ result }: Props) {
   const isDailyFortune = !!result.daily_fortune;
 
   const isIChing = !!result.hexagram_info;
+  const detailText = result.detail || '';
+
+  const shouldHideDetail = useMemo(() => {
+    if (!detailText || !result.summary) return false;
+    const normalize = (text: string) => text.replace(/[#*`\s]/g, '').trim();
+    const normalizedSummary = normalize(result.summary);
+    const normalizedDetail = normalize(detailText);
+    if (!normalizedSummary || !normalizedDetail) return false;
+    if (normalizedSummary === normalizedDetail) return true;
+    if (normalizedDetail.includes(normalizedSummary) && normalizedSummary.length / normalizedDetail.length > 0.65) {
+      return true;
+    }
+    if (normalizedSummary.includes(normalizedDetail) && normalizedDetail.length / normalizedSummary.length > 0.65) {
+      return true;
+    }
+    return false;
+  }, [detailText, result.summary]);
 
   const getOutcomeColor = (outcome: string) => {
     if (outcome.includes('吉')) return 'result-badge--success';
@@ -212,7 +229,7 @@ export default function DivinationResultCard({ result }: Props) {
         </CardContent>
 
         {/* 展开按钮 */}
-        {result.detail && (
+        {result.detail && !shouldHideDetail && (
           <div className="result-toggle">
             <Button
               variant="text"
@@ -236,7 +253,7 @@ export default function DivinationResultCard({ result }: Props) {
       </Card>
 
       {/* 详细解读 + 卦象/起卦过程 */}
-      {showDetail && (
+      {showDetail && !shouldHideDetail && (
         <div className="result-detail animate-fadeIn">
           {isDailyFortune && result.daily_fortune ? (
             <DailyFortuneDisplay info={result.daily_fortune} />
@@ -275,6 +292,12 @@ export default function DivinationResultCard({ result }: Props) {
               {renderYarrowProcess(result.yarrow_trace)}
             </>
           )}
+        </div>
+      )}
+
+      {shouldHideDetail && (
+        <div className="result-detail-note">
+          当前摘要已包含完整解读要点
         </div>
       )}
 

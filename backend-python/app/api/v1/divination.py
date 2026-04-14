@@ -147,6 +147,11 @@ async def _run_divination_task(session_id: str, request: CreateDivinationRequest
                         "session_id": session_id,
                         "processing_type": serializable_result.get("processing_type"),
                         "fallback_used": bool(serializable_result.get("fallback_used", False)),
+                        "degrade_reason": serializable_result.get("degrade_reason"),
+                        "quality_level": (serializable_result.get("quality") or {}).get("level")
+                        if isinstance(serializable_result.get("quality"), dict) else None,
+                        "quality_score": (serializable_result.get("quality") or {}).get("score")
+                        if isinstance(serializable_result.get("quality"), dict) else None,
                         "summary_len": len(summary_text),
                         "detail_len": len(detail_text),
                         "status": session.status,

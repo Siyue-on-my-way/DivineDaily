@@ -140,14 +140,14 @@ class DailyFortuneService:
                     finally:
                         if hasattr(llm_service, 'close'):
                             await llm_service.close()
-            
-            return self._generate_default_content(algorithm_data)
+                raise RuntimeError("每日运势配置的LLM不可用或未启用")
+            raise RuntimeError("未找到每日运势可用的Prompt/LLM配置")
             
         except Exception as e:
             logger.error(f"LLM 生成失败: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
-            return self._generate_default_content(algorithm_data)
+            raise
     
     async def _build_prompt_with_config(
         self,
@@ -304,8 +304,10 @@ class DailyFortuneService:
             
             return "\n".join(content_parts)
         except Exception as e:
-            logger.warning(f"JSON 解析失败: {e}, 使用原始响应")
-            return response[:500] if response else self._generate_default_content(algorithm_data)
+            logger.warning(f"JSON 解析失败: {e}, 返回原始响应")
+            if response:
+                return response
+            raise RuntimeError("LLM返回为空，无法生成每日运势内容")
     
     def _generate_default_content(self, algorithm_data: Dict[str, Any]) -> str:
         """生成默认内容（当 LLM 失败时）"""

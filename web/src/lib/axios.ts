@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { getAuthToken, getRefreshToken, getTokenType, setAuthToken, setRefreshToken, setTokenType, clearAuthToken } from './AuthContext';
 import { authApi } from '../api/auth';
+import { formatApiErrorMessage } from '../utils/apiError';
 
 // 创建 axios 实例
 const axiosInstance: AxiosInstance = axios.create({
@@ -152,7 +153,7 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 500) {
       if (!isSilentErrorRequest(originalRequest)) {
         window.dispatchEvent(new CustomEvent('toast:error', {
-          detail: { message: '服务器错误，请稍后重试' }
+          detail: { message: formatApiErrorMessage(error, '服务器错误，请稍后重试') }
         }));
       }
       return Promise.reject(error);
@@ -178,8 +179,14 @@ axiosInstance.interceptors.response.use(
     }
 
     // 其他错误
-    const errorMessage = (error.response?.data as any)?.message || error.message || '请求失败';
+    const errorMessage = formatApiErrorMessage(error, '请求失败');
     console.error('Response error:', errorMessage, error);
+
+    if (!isSilentErrorRequest(originalRequest) && error.response?.status && error.response.status >= 400) {
+      window.dispatchEvent(new CustomEvent('toast:error', {
+        detail: { message: errorMessage }
+      }));
+    }
     
     return Promise.reject(error);
   }

@@ -199,12 +199,24 @@
 /* 响应式设计 */
 @media (min-width: 640px) {
   .tarot-spread-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  
+
   .tarot-actions {
-    max-width: 400px;
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
+  }
+}
+
+@media (min-width: 900px) {
+  .tarot-spread-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .tarot-actions {
+    flex-direction: column;
   }
 }

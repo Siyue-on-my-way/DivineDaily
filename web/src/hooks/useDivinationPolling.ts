@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import axiosInstance from '../lib/axios';
 import type { DivinationResult } from '../types/divination';
+import { formatApiErrorMessage } from '../utils/apiError';
 
 /**
  * 占卜轮询 Hook 配置选项
@@ -231,7 +232,7 @@ export const useDivinationPolling = ({
         cleanup();
         const serverError = createPollingError(
           'server',
-          '服务器繁忙，请稍后重试',
+          formatApiErrorMessage(error, '服务器繁忙，请稍后重试'),
           statusCode,
           error
         );
@@ -244,7 +245,7 @@ export const useDivinationPolling = ({
         cleanup();
         const authError = createPollingError(
           'server',
-          '登录已过期，请重新登录',
+          formatApiErrorMessage(error, '登录已过期，请重新登录'),
           statusCode,
           error
         );
@@ -277,7 +278,7 @@ export const useDivinationPolling = ({
         cleanup();
         const unknownError = createPollingError(
           'unknown',
-          error.response?.data?.detail || error.message || '占卜失败，请重试',
+          formatApiErrorMessage(error, '占卜失败，请重试'),
           statusCode,
           error
         );

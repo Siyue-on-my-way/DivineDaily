@@ -100,6 +100,13 @@
   line-height: 1.9;
 }
 
+.result-detail-note {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: #718096;
+}
+
 /* 周易六爻展示 */
 .iching-card {
   margin-bottom: 8px;

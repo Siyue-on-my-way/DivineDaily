@@ -18,6 +18,7 @@ from app.models.prompt_config import PromptConfig
 
 from app.core.logger import get_logger
 logger = get_logger("api.admin")
+OPENAI_COMPATIBLE_MAX_TOKENS_LIMIT = 65535
 
 
 router = APIRouter()
@@ -39,6 +40,16 @@ def _safe_json_dumps(data: Any, max_length: int = 1200) -> str:
     if len(raw) > max_length:
         return raw[:max_length] + "...<truncated>"
     return raw
+
+
+def _normalize_max_tokens(raw_max_tokens: Any) -> int:
+    try:
+        value = int(raw_max_tokens)
+    except (TypeError, ValueError):
+        return 1000
+    if value < 1:
+        return 1000
+    return min(value, OPENAI_COMPATIBLE_MAX_TOKENS_LIMIT)
 
 
 def build_chat_completions_url(endpoint: Optional[str], url_type: Optional[str]) -> str:
@@ -318,11 +329,21 @@ async def test_llm_config(
     if config.api_key:
         headers["Authorization"] = f"Bearer {config.api_key}"
     
+    configured_max_tokens = config.extra_config.get("max_tokens", 1000) if config.extra_config else 1000
+    normalized_max_tokens = _normalize_max_tokens(configured_max_tokens)
+    if normalized_max_tokens != configured_max_tokens:
+        logger.warning(
+            "LLM测试 max_tokens 超出范围，已自动钳制 | config_id=%s | original=%s | normalized=%s",
+            config_id,
+            configured_max_tokens,
+            normalized_max_tokens,
+        )
+
     request_body = {
         "model": config.model_name,
         "messages": [{"role": "user", "content": test_data.message}],
         "temperature": config.extra_config.get("temperature", 0.7) if config.extra_config else 0.7,
-        "max_tokens": config.extra_config.get("max_tokens", 1000) if config.extra_config else 1000,
+        "max_tokens": normalized_max_tokens,
     }
 
     try:

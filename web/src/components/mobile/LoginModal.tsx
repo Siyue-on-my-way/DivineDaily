@@ -62,16 +62,13 @@ export default function LoginModal() {
 
     if (!authExpired) {
       setRetryCountdown(0);
-      if (username) {
-        passwordRef.current?.focus();
-      } else {
-        usernameRef.current?.focus();
-      }
+      // 仅在弹窗打开时聚焦用户名，避免输入过程中自动跳到密码框
+      usernameRef.current?.focus();
       return;
     }
 
     setRetryCountdown(5);
-  }, [showLoginModal, authExpired, username]);
+  }, [showLoginModal, authExpired]);
 
   useEffect(() => {
     if (!authExpired || retryCountdown <= 0) {
@@ -87,13 +84,10 @@ export default function LoginModal() {
 
   useEffect(() => {
     if (authExpired && retryCountdown === 0) {
-      if (username) {
-        passwordRef.current?.focus();
-      } else {
-        usernameRef.current?.focus();
-      }
+      // 登录过期自动弹窗时也先聚焦用户名，由用户自行决定何时输入密码
+      usernameRef.current?.focus();
     }
-  }, [authExpired, retryCountdown, username]);
+  }, [authExpired, retryCountdown]);
 
   if (!showLoginModal) return null;
 
