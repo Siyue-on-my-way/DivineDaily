@@ -40,4 +40,8 @@ final class AppEnvironment {
     func makeSaveService(onUnauthorized: (() -> Void)? = nil) -> SaveService {
         SaveService(client: makeHTTPClient(onUnauthorized: onUnauthorized))
     }
+
+    func makeInsightsService(onUnauthorized: (() -> Void)? = nil) -> InsightsService {
+        InsightsService(client: makeHTTPClient(onUnauthorized: onUnauthorized))
+    }
 }

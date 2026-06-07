@@ -32,6 +32,12 @@ struct HomeView: View {
                     } label: {
                         Text("占卜历史")
                     }
+
+                    NavigationLink {
+                        InsightsView(authStore: authStore)
+                    } label: {
+                        Text("我的洞察")
+                    }
                 }
 
                 Section("分享") {
